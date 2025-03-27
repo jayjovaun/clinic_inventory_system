@@ -22,7 +22,10 @@ function addStockRow() {
     row.innerHTML = `
         <td><input type="text" class="form-control medicine-name" placeholder="Enter medicine"></td>
         <td><input type="text" class="form-control brand-name" placeholder="Enter brand name"></td>
-        <td><input type="number" class="form-control quantity" placeholder="Enter quantity"></td>
+        <td>
+            <input type="number" class="form-control quantity" placeholder="Enter quantity">
+            <div class="error-text"></div>
+        </td>
         <td><input type="date" class="form-control expiration-date"></td>
         <td><input type="date" class="form-control delivery-date"></td>
         <td>
@@ -45,6 +48,39 @@ function deleteRow(button) {
     button.closest("tr").remove();
 }
 
+// Validate input fields
+function validateInputs() {
+    let isValid = true;
+
+    document.querySelectorAll("#stockTable tbody tr").forEach(row => {
+        row.querySelectorAll("input, select").forEach(input => {
+            let value = input.value.trim();
+            let isQuantityField = input.classList.contains("quantity");
+            let errorText = input.nextElementSibling;
+
+            // Ensure error text element exists
+            if (!errorText || !errorText.classList.contains("error-text")) {
+                errorText = document.createElement("div");
+                errorText.classList.add("error-text");
+                input.parentNode.appendChild(errorText);
+            }
+
+            // Check if field is empty or if quantity is invalid
+            if (value === "" || (isQuantityField && (!/^\d+$/.test(value) || +value <= 0))) {
+                input.classList.add("error");
+                errorText.textContent = value === "" ? "This field is required" : "Quantity must be a whole number greater than 0";
+                errorText.style.display = "block";
+                isValid = false;
+            } else {
+                input.classList.remove("error");
+                errorText.style.display = "none";
+            }
+        });
+    });
+
+    return isValid;
+}
+
 // Save stock data
 function confirmSave() {
     if (!validateInputs()) return;
@@ -52,23 +88,6 @@ function confirmSave() {
     if (confirm("Are you sure you want to add this?")) {
         saveStock();
     }
-}
-
-// Validate input fields
-function validateInputs() {
-    let isValid = true;
-    document.querySelectorAll("#stockTable tbody tr").forEach(row => {
-        row.querySelectorAll("input, select").forEach(input => {
-            if (input.value.trim() === "" || (input.type === "number" && input.value <= 0)) {
-                input.classList.add("error");
-                isValid = false;
-            } else {
-                input.classList.remove("error");
-            }
-        });
-    });
-
-    return isValid;
 }
 
 // Save stock and add to recent stocks
@@ -203,68 +222,4 @@ function exportTableToCSV() {
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", "medicine_inventory.csv");
     link.click();
-}
-
-
-// Validate input fields, ensuring quantity is a positive whole number
-function validateInputs() {
-    let isValid = true;
-
-    document.querySelectorAll("#stockTable tbody tr").forEach(row => {
-        row.querySelectorAll("input, select").forEach(input => {
-            let value = input.value.trim();
-            let isQuantityField = input.classList.contains("quantity");
-            let errorText = input.nextElementSibling; // Get error text element
-
-            // Create error text element if it doesn't exist
-            if (!errorText || !errorText.classList.contains("error-text")) {
-                errorText = document.createElement("div");
-                errorText.classList.add("error-text");
-                input.parentNode.appendChild(errorText);
-            }
-
-            // Check for empty fields or invalid quantity
-            if (value === "" || (isQuantityField && (!Number.isInteger(+value) || +value <= 0))) {
-                input.classList.add("error");
-                errorText.textContent = value === "" ? "This field is required" : "Quantity must be a whole number greater than 0";
-                errorText.style.display = "block";
-                isValid = false;
-            } else {
-                input.classList.remove("error");
-                errorText.style.display = "none";
-            }
-        });
-    });
-
-    return isValid;
-}
-
-// Call this function before saving stock
-function confirmSave() {
-    if (validateInputs()) {
-        if (confirm("Are you sure you want to add this?")) {
-            saveStock();
-        }
-    }
-}
-
-// Validate input fields, ensuring quantity is a positive whole number
-function validateInputs() {
-    let isValid = true;
-    document.querySelectorAll("#stockTable tbody tr").forEach(row => {
-        row.querySelectorAll("input, select").forEach(input => {
-            let value = input.value.trim();
-            let isQuantityField = input.classList.contains("quantity");
-
-            // Check if input is empty or invalid quantity
-            if (value === "" || (isQuantityField && (!Number.isInteger(+value) || +value <= 0))) {
-                input.classList.add("error");
-                isValid = false;
-            } else {
-                input.classList.remove("error");
-            }
-        });
-    });
-
-    return isValid;
 }
