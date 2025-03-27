@@ -204,3 +204,67 @@ function exportTableToCSV() {
     link.setAttribute("download", "medicine_inventory.csv");
     link.click();
 }
+
+
+// Validate input fields, ensuring quantity is a positive whole number
+function validateInputs() {
+    let isValid = true;
+
+    document.querySelectorAll("#stockTable tbody tr").forEach(row => {
+        row.querySelectorAll("input, select").forEach(input => {
+            let value = input.value.trim();
+            let isQuantityField = input.classList.contains("quantity");
+            let errorText = input.nextElementSibling; // Get error text element
+
+            // Create error text element if it doesn't exist
+            if (!errorText || !errorText.classList.contains("error-text")) {
+                errorText = document.createElement("div");
+                errorText.classList.add("error-text");
+                input.parentNode.appendChild(errorText);
+            }
+
+            // Check for empty fields or invalid quantity
+            if (value === "" || (isQuantityField && (!Number.isInteger(+value) || +value <= 0))) {
+                input.classList.add("error");
+                errorText.textContent = value === "" ? "This field is required" : "Quantity must be a whole number greater than 0";
+                errorText.style.display = "block";
+                isValid = false;
+            } else {
+                input.classList.remove("error");
+                errorText.style.display = "none";
+            }
+        });
+    });
+
+    return isValid;
+}
+
+// Call this function before saving stock
+function confirmSave() {
+    if (validateInputs()) {
+        if (confirm("Are you sure you want to add this?")) {
+            saveStock();
+        }
+    }
+}
+
+// Validate input fields, ensuring quantity is a positive whole number
+function validateInputs() {
+    let isValid = true;
+    document.querySelectorAll("#stockTable tbody tr").forEach(row => {
+        row.querySelectorAll("input, select").forEach(input => {
+            let value = input.value.trim();
+            let isQuantityField = input.classList.contains("quantity");
+
+            // Check if input is empty or invalid quantity
+            if (value === "" || (isQuantityField && (!Number.isInteger(+value) || +value <= 0))) {
+                input.classList.add("error");
+                isValid = false;
+            } else {
+                input.classList.remove("error");
+            }
+        });
+    });
+
+    return isValid;
+}
