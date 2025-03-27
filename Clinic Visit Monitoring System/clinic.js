@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
     loadRecentStocks();
 });
 
-// Highlight active sidebar link
+// Highlight the active sidebar link
 function highlightActivePage() {
     let currentPage = window.location.pathname.split("/").pop();
     document.querySelectorAll(".sidebar a").forEach(link => {
@@ -52,7 +52,7 @@ function deleteRow(button) {
     button.closest("tr").remove();
 }
 
-// Validate input fields
+// Validate input fields, including quantity restrictions
 function validateInputs() {
     let isValid = true;
     document.querySelectorAll("#stockTable tbody tr, #inventoryTableBody tr").forEach(row => {
@@ -82,7 +82,7 @@ function validateInputs() {
     return isValid;
 }
 
-// Save stock with validation
+// Confirm before saving stock
 function confirmSave() {
     if (validateInputs()) {
         if (confirm("Are you sure you want to add this?")) {
@@ -91,23 +91,23 @@ function confirmSave() {
     }
 }
 
-// Save stock and add to recent stocks
+// Save stock and add to inventory
 function saveStock() {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     let recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
 
     document.querySelectorAll("#stockTable tbody tr").forEach(row => {
-        let medicine = row.querySelector(".medicine-name").value;
-        let brand = row.querySelector(".brand-name").value;
-        let quantity = parseInt(row.querySelector(".quantity").value);
-        let expirationDate = row.querySelector(".expiration-date").value;
-        let dateDelivered = row.querySelector(".delivery-date").value;
-        let category = row.querySelector(".category").value;
+        let newStock = {
+            medicine: row.querySelector(".medicine-name").value,
+            brand: row.querySelector(".brand-name").value,
+            category: row.querySelector(".category").value,
+            quantity: parseInt(row.querySelector(".quantity").value),
+            expirationDate: row.querySelector(".expiration-date").value,
+            dateDelivered: row.querySelector(".delivery-date").value
+        };
 
-        let newStock = { medicine, brand, category, quantity, expirationDate, dateDelivered };
         inventory.push(newStock);
         recentStocks.unshift(newStock);
-
         row.remove();
     });
 
@@ -118,7 +118,7 @@ function saveStock() {
     loadRecentStocks();
 }
 
-// Load and display inventory
+// Load inventory and display
 function loadInventory() {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     inventory.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate));
@@ -144,29 +144,27 @@ function loadInventory() {
     });
 }
 
-// Dispense a medicine (Remove from Inventory)
+// Dispense medicine (removes from inventory)
 function dispenseMedicine(index) {
     if (confirm("Are you sure you want to dispense this medicine?")) {
         let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-        inventory.splice(index, 1); // Remove medicine from inventory
-
+        inventory.splice(index, 1);
         localStorage.setItem("medicineInventory", JSON.stringify(inventory));
-        loadInventory(); // Refresh inventory display
+        loadInventory();
     }
 }
 
-// Delete a medicine (Remove from Inventory)
+// Delete medicine from inventory
 function deleteMedicine(index) {
     if (confirm("Are you sure you want to delete this medicine?")) {
         let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-        inventory.splice(index, 1); // Remove medicine from inventory
-
+        inventory.splice(index, 1);
         localStorage.setItem("medicineInventory", JSON.stringify(inventory));
-        loadInventory(); // Refresh inventory display
+        loadInventory();
     }
 }
 
-// Edit a medicine entry
+// Edit medicine entry
 function editMedicine(index) {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     let med = inventory[index];
@@ -175,6 +173,9 @@ function editMedicine(index) {
     row.innerHTML = `
         <td><input type="text" class="form-control medicine-name" value="${med.medicine}"></td>
         <td><input type="text" class="form-control brand-name" value="${med.brand}"></td>
+        <td><input type="number" class="form-control quantity" min="1" value="${med.quantity}" oninput="validateQuantity(this)"></td>
+        <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}"></td>
+        <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}"></td>
         <td>
             <select class="form-control category">
                 <option value="Pain Reliever" ${med.category === "Pain Reliever" ? "selected" : ""}>Pain Reliever</option>
@@ -183,12 +184,29 @@ function editMedicine(index) {
                 <option value="Vitamin" ${med.category === "Vitamin" ? "selected" : ""}>Vitamin</option>
             </select>
         </td>
-        <td><input type="number" class="form-control quantity" min="1" value="${med.quantity}" oninput="validateQuantity(this)"></td>
-        <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}"></td>
-        <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}"></td>
         <td>
             <button class="btn btn-success btn-sm" onclick="saveUpdatedMedicine(${index})">💾 Save</button>
             <button class="btn btn-secondary btn-sm" onclick="loadInventory()">❌ Cancel</button>
         </td>
     `;
+}
+
+// Save updated medicine entry
+function saveUpdatedMedicine(index) {
+    if (!validateInputs()) return;
+
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    let row = document.querySelector(`#inventoryTableBody tr:nth-child(${index + 1})`);
+
+    inventory[index] = {
+        medicine: row.querySelector(".medicine-name").value,
+        brand: row.querySelector(".brand-name").value,
+        category: row.querySelector(".category").value,
+        quantity: parseInt(row.querySelector(".quantity").value),
+        expirationDate: row.querySelector(".expiration-date").value,
+        dateDelivered: row.querySelector(".delivery-date").value
+    };
+
+    localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+    loadInventory();
 }
