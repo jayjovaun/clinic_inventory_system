@@ -1,7 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     highlightActivePage();
     loadInventory();
-    loadRecentStocks();
 });
 
 // Highlight active sidebar link
@@ -12,145 +11,17 @@ function highlightActivePage() {
     });
 }
 
-// Add a new stock entry row
-function addStockRow() {
-    const tableBody = document.querySelector("#stockTable tbody");
-    const row = document.createElement("tr");
-    row.innerHTML = `
-        <td><input type="text" class="form-control medicine-name" required></td>
-        <td><input type="text" class="form-control brand-name" required></td>
-        <td>
-            <select class="form-control category" onchange="handleCategoryChange(this)" required>
-                <option value="">Select Category</option>
-                <option value="Pain Reliever">Pain Reliever</option>
-                <option value="Antibiotic">Antibiotic</option>
-                <option value="Antiseptic">Antiseptic</option>
-                <option value="Vitamin">Vitamin</option>
-                <option value="Other">Other</option>
-            </select>
-        </td>
-        <td><input type="number" class="form-control quantity-input" min="1" required style="width: 70px;"></td>
-        <td><input type="date" class="form-control expiration-date" required></td>
-        <td><input type="date" class="form-control delivery-date" required></td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteRow(this)">Delete</button></td>
-    `;
-    tableBody.appendChild(row);
+// Format date as dd/mm/yyyy
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
 }
 
-// Handle category "Other" selection
-function handleCategoryChange(select) {
-    if (select.value === "Other") {
-        const input = document.createElement("input");
-        input.type = "text";
-        input.className = "form-control category-input";
-        input.placeholder = "Enter category";
-        input.required = true;
-        input.onblur = () => validateCategoryInput(input);
-        select.replaceWith(input);
-        input.focus();
-    }
-}
-
-// Validate category input if "Other" is selected
-function validateCategoryInput(input) {
-    if (!input.value.trim()) {
-        showError(input, "Category cannot be empty");
-        return false;
-    }
-    clearError(input);
-    return true;
-}
-
-// Validate quantity (no negatives or decimals)
-function validateQuantity(input) {
-    const value = parseInt(input.value);
-    if (isNaN(value) || value < 1) {
-        showError(input, "Quantity must be ≥ 1");
-        return false;
-    }
-    clearError(input);
-    return true;
-}
-
-// Delete stock entry row
-function deleteRow(button) {
-    button.closest("tr").remove();
-}
-
-// Confirm save function with validation
-function confirmSave() {
-    if (validateAllInputs()) {
-        if (confirm("Are you sure you want to add this?")) {
-            saveStock();
-        }
-    }
-}
-
-// Validate all input fields
-function validateAllInputs() {
-    let isValid = true;
-    document.querySelectorAll("#stockTable tbody tr").forEach(row => {
-        row.querySelectorAll("input, select").forEach(input => {
-            if (input.classList.contains("quantity-input")) {
-                isValid = validateQuantity(input) && isValid;
-            } else if (input.classList.contains("category-input")) {
-                isValid = validateCategoryInput(input) && isValid;
-            } else if (!input.value.trim()) {
-                showError(input, "This field is required");
-                isValid = false;
-            } else {
-                clearError(input);
-            }
-        });
-    });
-    return isValid;
-}
-
-// Show validation error
-function showError(input, message) {
-    clearError(input);
-    input.classList.add("is-invalid");
-    const errorText = document.createElement("div");
-    errorText.className = "invalid-feedback";
-    errorText.textContent = message;
-    input.parentNode.appendChild(errorText);
-}
-
-// Clear validation error
-function clearError(input) {
-    input.classList.remove("is-invalid");
-    const errorText = input.nextElementSibling;
-    if (errorText?.classList.contains("invalid-feedback")) {
-        errorText.remove();
-    }
-}
-
-// Save stock function
-function saveStock() {
-    const inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-    const recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
-
-    document.querySelectorAll("#stockTable tbody tr").forEach(row => {
-        const newStock = {
-            medicine: row.querySelector(".medicine-name").value.trim(),
-            brand: row.querySelector(".brand-name").value.trim(),
-            category: row.querySelector(".category, .category-input").value.trim(),
-            quantity: parseInt(row.querySelector(".quantity-input").value),
-            expirationDate: row.querySelector(".expiration-date").value,
-            dateDelivered: row.querySelector(".delivery-date").value
-        };
-        inventory.push(newStock);
-        recentStocks.unshift(newStock);
-    });
-
-    localStorage.setItem("medicineInventory", JSON.stringify(inventory));
-    localStorage.setItem("recentStocks", JSON.stringify(recentStocks));
-    document.querySelector("#stockTable tbody").innerHTML = "";
-    loadInventory();
-    loadRecentStocks();
-}
-
-// Load inventory function
+// Load inventory function with professional button styling
 function loadInventory() {
     const inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     inventory.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate));
@@ -161,26 +32,18 @@ function loadInventory() {
             <td>${med.medicine || '-'}</td>
             <td>${med.brand || '-'}</td>
             <td>${med.category || '-'}</td>
-            <td>${med.quantity || '0'}</td>
-            <td>${formatDate(med.expirationDate) || '-'}</td>
-            <td>${formatDate(med.dateDelivered) || '-'}</td>
-            <td class="actions-cell">
-                <button class="btn btn-warning btn-sm dispense-btn" onclick="dispenseMedicine(${index})">Dispense</button>
-                <button class="btn btn-primary btn-sm" onclick="editMedicine(${index})">Edit</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteMedicine(${index})">Delete</button>
+            <td class="text-center">${med.quantity || '0'}</td>
+            <td class="text-center">${formatDate(med.expirationDate)}</td>
+            <td class="text-center">${formatDate(med.dateDelivered)}</td>
+            <td class="text-center actions-cell">
+                <div class="d-flex justify-content-center gap-2">
+                    <button class="btn btn-outline-warning btn-sm" onclick="dispenseMedicine(${index})">Dispense</button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="editMedicine(${index})">Edit</button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="deleteMedicine(${index})">Delete</button>
+                </div>
             </td>
         </tr>
     `).join("");
-}
-
-// Format date as dd/mm/yyyy
-function formatDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
 }
 
 // Dispense medicine
@@ -213,17 +76,19 @@ function editMedicine(index) {
         <td><input type="text" class="form-control medicine-name" value="${med.medicine}" required></td>
         <td><input type="text" class="form-control brand-name" value="${med.brand}" required></td>
         <td><input type="text" class="form-control category" value="${med.category}" required></td>
-        <td><input type="number" class="form-control quantity-input" value="${med.quantity}" min="1" required style="width: 70px;"></td>
+        <td class="text-center"><input type="number" class="form-control quantity-input" value="${med.quantity}" min="1" required></td>
         <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}" required></td>
         <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}" required></td>
-        <td class="actions-cell">
-            <button class="btn btn-success btn-sm" onclick="saveUpdatedMedicine(${index})">Save</button>
-            <button class="btn btn-secondary btn-sm" onclick="loadInventory()">Cancel</button>
+        <td class="text-center actions-cell">
+            <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-success btn-sm" onclick="saveUpdatedMedicine(${index})">Save</button>
+                <button class="btn btn-secondary btn-sm" onclick="loadInventory()">Cancel</button>
+            </div>
         </td>
     `;
 }
 
-// Save updated medicine function with validation
+// Save updated medicine
 function saveUpdatedMedicine(index) {
     const row = document.querySelector(`#inventoryTableBody tr:nth-child(${index + 1})`);
     const inputs = {
@@ -235,20 +100,24 @@ function saveUpdatedMedicine(index) {
         dateDelivered: row.querySelector(".delivery-date")
     };
 
-    // Clear errors and validate
+    // Validate inputs
     let isValid = true;
     Object.entries(inputs).forEach(([field, input]) => {
-        clearError(input);
         if (!input.value.trim()) {
-            showError(input, `${field.replace(/^\w/, c => c.toUpperCase())} is required`);
+            input.classList.add("is-invalid");
             isValid = false;
         } else if (field === "quantity" && (isNaN(input.value) || parseInt(input.value) < 1)) {
-            showError(input, "Quantity must be ≥ 1");
+            input.classList.add("is-invalid");
             isValid = false;
+        } else {
+            input.classList.remove("is-invalid");
         }
     });
 
-    if (!isValid) return;
+    if (!isValid) {
+        alert("Please fill all fields with valid values");
+        return;
+    }
 
     // Update inventory
     const inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
@@ -262,22 +131,6 @@ function saveUpdatedMedicine(index) {
     };
     localStorage.setItem("medicineInventory", JSON.stringify(inventory));
     loadInventory();
-}
-
-// Load recent stocks
-function loadRecentStocks() {
-    const recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
-    const tableBody = document.querySelector("#recentStocksTable tbody");
-    tableBody.innerHTML = recentStocks.slice(0, 5).map(stock => `
-        <tr>
-            <td>${stock.medicine || '-'}</td>
-            <td>${stock.brand || '-'}</td>
-            <td>${stock.category || '-'}</td>
-            <td>${stock.quantity || '0'}</td>
-            <td>${formatDate(stock.expirationDate) || '-'}</td>
-            <td>${formatDate(stock.dateDelivered) || '-'}</td>
-        </tr>
-    `).join("");
 }
 
 // Export to CSV function
@@ -297,7 +150,7 @@ function exportToCSV() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "medicine_inventory_" + new Date().toISOString().slice(0, 10) + ".csv";
+    link.download = `medicine_inventory_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
