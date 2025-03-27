@@ -65,17 +65,23 @@ function validateInputs() {
                 input.parentNode.appendChild(errorText);
             }
 
-            // Validate: Empty fields or invalid quantity
+            // Validation
             if (value === "") {
                 input.classList.add("error");
                 errorText.textContent = "This field is required";
                 errorText.style.display = "block";
                 isValid = false;
-            } else if (isQuantityField && (!/^\d+$/.test(value) || parseInt(value) <= 0)) {
-                input.classList.add("error");
-                errorText.textContent = "Quantity must be a whole number greater than 0";
-                errorText.style.display = "block";
-                isValid = false;
+            } else if (isQuantityField) {
+                let quantity = Number(value);
+                if (!Number.isInteger(quantity) || quantity <= 0) {
+                    input.classList.add("error");
+                    errorText.textContent = "Quantity must be a positive whole number";
+                    errorText.style.display = "block";
+                    isValid = false;
+                } else {
+                    input.classList.remove("error");
+                    errorText.style.display = "none";
+                }
             } else {
                 input.classList.remove("error");
                 errorText.style.display = "none";
