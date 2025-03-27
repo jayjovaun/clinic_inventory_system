@@ -47,10 +47,11 @@ function handleCategoryChange(select) {
         input.type = "text";
         input.classList.add("form-control", "category-input");
         input.placeholder = "Enter category";
-        input.onblur = function () {
-            validateCategoryInput(input);
-        };
-        select.replaceWith(input);
+        input.setAttribute("onblur", "validateCategoryInput(this)");
+
+
+
+        select.parentNode.replaceChild(input, select);
         input.focus();
     }
 }
@@ -176,6 +177,28 @@ function loadInventory() {
         tableBody.innerHTML += row;
     });
 }
+
+// Dispense medicine
+function dispenseMedicine(index) {
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    if (confirm("Are you sure you want to dispense this medicine?")) {
+        inventory.splice(index, 1);
+        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+        loadInventory();
+    }
+}
+
+// Delete medicine from inventory
+function deleteMedicine(index) {
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    if (confirm("Are you sure you want to delete this medicine?")) {
+        inventory.splice(index, 1);
+        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+        loadInventory();
+    }
+}
+
+
 
 // Edit medicine function
 function editMedicine(index) {
