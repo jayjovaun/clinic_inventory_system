@@ -14,6 +14,13 @@ function highlightActivePage() {
     });
 }
 
+// Prevent negative and decimal values in quantity input fields
+document.addEventListener("input", function (event) {
+    if (event.target.classList.contains("quantity")) {
+        event.target.value = event.target.value.replace(/[^0-9]/g, ""); // Allow only digits
+    }
+});
+
 // Add a new row for stock entry
 function addStockRow() {
     let tableBody = document.querySelector("#stockTable tbody");
@@ -22,10 +29,7 @@ function addStockRow() {
     row.innerHTML = `
         <td><input type="text" class="form-control medicine-name" placeholder="Enter medicine"></td>
         <td><input type="text" class="form-control brand-name" placeholder="Enter brand name"></td>
-        <td>
-            <input type="number" class="form-control quantity" placeholder="Enter quantity">
-            <div class="error-text"></div>
-        </td>
+        <td><input type="number" class="form-control quantity" placeholder="Enter quantity"></td>
         <td><input type="date" class="form-control expiration-date"></td>
         <td><input type="date" class="form-control delivery-date"></td>
         <td>
@@ -56,9 +60,9 @@ function validateInputs() {
         row.querySelectorAll("input, select").forEach(input => {
             let value = input.value.trim();
             let isQuantityField = input.classList.contains("quantity");
-            let errorText = input.nextElementSibling; // Get existing error text
+            let errorText = input.nextElementSibling;
 
-            // Create error text if not exists
+            // Create error text if it doesn't exist
             if (!errorText || !errorText.classList.contains("error-text")) {
                 errorText = document.createElement("div");
                 errorText.classList.add("error-text");
@@ -92,13 +96,12 @@ function validateInputs() {
     return isValid;
 }
 
-
-// Save stock data
+// Confirm save after validation
 function confirmSave() {
-    if (!validateInputs()) return;
-
-    if (confirm("Are you sure you want to add this?")) {
-        saveStock();
+    if (validateInputs()) {
+        if (confirm("Are you sure you want to add this?")) {
+            saveStock();
+        }
     }
 }
 
@@ -219,19 +222,4 @@ function searchInventory() {
         let medicineName = row.children[0].textContent.toLowerCase();
         row.style.display = medicineName.includes(searchTerm) ? "" : "none";
     });
-}
-
-// Export inventory to CSV
-function exportTableToCSV() {
-    let table = document.getElementById("medicineInventoryTable");
-    let rows = Array.from(table.querySelectorAll("tr")).map(row =>
-        Array.from(row.cells).map(cell => cell.textContent).join(",")
-    ).join("\n");
-
-    let csvContent = "data:text/csv;charset=utf-8," + rows;
-    let encodedUri = encodeURI(csvContent);
-    let link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "medicine_inventory.csv");
-    link.click();
 }
