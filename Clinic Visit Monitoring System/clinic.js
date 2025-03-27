@@ -232,7 +232,7 @@ function saveUpdatedMedicine(index) {
         if (!input.value.trim()) {
             showError(input, `${field.replace(/^\w/, c => c.toUpperCase())} is required`);
             isValid = false;
-        } else if (field === "quantity" && (isNaN(input.value) || parseInt(input.value) < 1) {
+        } else if (field === "quantity" && (isNaN(input.value) || parseInt(input.value) < 1)) {
             showError(input, "Quantity must be ≥ 1");
             isValid = false;
         }
