@@ -22,9 +22,6 @@ function addStockRow() {
     row.innerHTML = `
         <td><input type="text" class="form-control medicine-name" placeholder="Enter medicine"></td>
         <td><input type="text" class="form-control brand-name" placeholder="Enter brand name"></td>
-        <td><input type="number" class="form-control quantity" min="1" placeholder="Enter quantity" oninput="validateQuantity(this)"></td>
-        <td><input type="date" class="form-control expiration-date"></td>
-        <td><input type="date" class="form-control delivery-date"></td>
         <td>
             <select class="form-control category">
                 <option value="Pain Reliever">Pain Reliever</option>
@@ -34,6 +31,9 @@ function addStockRow() {
                 <option value="Other">Other</option>
             </select>
         </td>
+        <td><input type="number" class="form-control quantity" min="1" placeholder="Enter quantity" oninput="validateQuantity(this)"></td>
+        <td><input type="date" class="form-control expiration-date"></td>
+        <td><input type="date" class="form-control delivery-date"></td>
         <td><button class="btn btn-danger btn-sm" onclick="deleteRow(this)">🗑</button></td>
     `;
 
@@ -42,7 +42,8 @@ function addStockRow() {
 
 // Prevent negative or decimal values in quantity
 function validateQuantity(input) {
-    if (input.value < 1 || !Number.isInteger(Number(input.value))) {
+    input.value = input.value.replace(/\D/g, '');
+    if (input.value === "0" || input.value === "") {
         input.value = "";
     }
 }
@@ -82,7 +83,7 @@ function validateInputs() {
     return isValid;
 }
 
-// Confirm before saving stock
+// Save stock with validation
 function confirmSave() {
     if (validateInputs()) {
         if (confirm("Are you sure you want to add this?")) {
@@ -91,23 +92,23 @@ function confirmSave() {
     }
 }
 
-// Save stock and add to inventory
+// Save stock and add to recent stocks
 function saveStock() {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     let recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
 
     document.querySelectorAll("#stockTable tbody tr").forEach(row => {
-        let newStock = {
-            medicine: row.querySelector(".medicine-name").value,
-            brand: row.querySelector(".brand-name").value,
-            category: row.querySelector(".category").value,
-            quantity: parseInt(row.querySelector(".quantity").value),
-            expirationDate: row.querySelector(".expiration-date").value,
-            dateDelivered: row.querySelector(".delivery-date").value
-        };
+        let medicine = row.querySelector(".medicine-name").value;
+        let brand = row.querySelector(".brand-name").value;
+        let category = row.querySelector(".category").value;
+        let quantity = parseInt(row.querySelector(".quantity").value);
+        let expirationDate = row.querySelector(".expiration-date").value;
+        let dateDelivered = row.querySelector(".delivery-date").value;
 
+        let newStock = { medicine, brand, category, quantity, expirationDate, dateDelivered };
         inventory.push(newStock);
         recentStocks.unshift(newStock);
+
         row.remove();
     });
 
@@ -118,7 +119,7 @@ function saveStock() {
     loadRecentStocks();
 }
 
-// Load inventory and display
+// Load and display inventory
 function loadInventory() {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     inventory.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate));
@@ -144,27 +145,7 @@ function loadInventory() {
     });
 }
 
-// Dispense medicine (removes from inventory)
-function dispenseMedicine(index) {
-    if (confirm("Are you sure you want to dispense this medicine?")) {
-        let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-        inventory.splice(index, 1);
-        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
-        loadInventory();
-    }
-}
-
-// Delete medicine from inventory
-function deleteMedicine(index) {
-    if (confirm("Are you sure you want to delete this medicine?")) {
-        let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-        inventory.splice(index, 1);
-        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
-        loadInventory();
-    }
-}
-
-// Edit medicine entry
+// Edit a medicine entry
 function editMedicine(index) {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     let med = inventory[index];
@@ -173,9 +154,6 @@ function editMedicine(index) {
     row.innerHTML = `
         <td><input type="text" class="form-control medicine-name" value="${med.medicine}"></td>
         <td><input type="text" class="form-control brand-name" value="${med.brand}"></td>
-        <td><input type="number" class="form-control quantity" min="1" value="${med.quantity}" oninput="validateQuantity(this)"></td>
-        <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}"></td>
-        <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}"></td>
         <td>
             <select class="form-control category">
                 <option value="Pain Reliever" ${med.category === "Pain Reliever" ? "selected" : ""}>Pain Reliever</option>
@@ -184,6 +162,9 @@ function editMedicine(index) {
                 <option value="Vitamin" ${med.category === "Vitamin" ? "selected" : ""}>Vitamin</option>
             </select>
         </td>
+        <td><input type="number" class="form-control quantity" min="1" value="${med.quantity}" oninput="validateQuantity(this)"></td>
+        <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}"></td>
+        <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}"></td>
         <td>
             <button class="btn btn-success btn-sm" onclick="saveUpdatedMedicine(${index})">💾 Save</button>
             <button class="btn btn-secondary btn-sm" onclick="loadInventory()">❌ Cancel</button>
@@ -191,7 +172,7 @@ function editMedicine(index) {
     `;
 }
 
-// Save updated medicine entry
+// Save updated medicine
 function saveUpdatedMedicine(index) {
     if (!validateInputs()) return;
 
@@ -207,6 +188,14 @@ function saveUpdatedMedicine(index) {
         dateDelivered: row.querySelector(".delivery-date").value
     };
 
+    localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+    loadInventory();
+}
+
+// Delete a medicine entry
+function deleteMedicine(index) {
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    inventory.splice(index, 1);
     localStorage.setItem("medicineInventory", JSON.stringify(inventory));
     loadInventory();
 }
