@@ -49,20 +49,39 @@
                 <button class="btn btn-sm btn-primary" onclick="addStockRow()">➕ Add</button>
             </div>
             <div class="card-body">
-                <table class="table table-bordered" id="stockTable">
+                <table id="stockTable" class="table">
                     <thead>
                         <tr>
-                            <th>Medicine</th>
+                            <th>Medicine Name</th>
                             <th>Brand Name</th>
+                            <th>Category</th>
                             <th>Quantity</th>
                             <th>Expiration Date</th>
                             <th>Date Delivered</th>
-                            <th>Category</th>
-                            <th>Action</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody>
+                        <tr>
+                            <td><input type="text" class="form-control medicine-name"></td>
+                            <td><input type="text" class="form-control brand-name"></td>
+                            <td>
+                                <select class="form-control category" onchange="handleOtherCategory(this)">
+                                    <option value="Pain Reliever">Pain Reliever</option>
+                                    <option value="Antibiotic">Antibiotic</option>
+                                    <option value="Antiseptic">Antiseptic</option>
+                                    <option value="Vitamin">Vitamin</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </td>
+                            <td><input type="number" class="form-control quantity" min="1" oninput="validateQuantity(this)"></td>
+                            <td><input type="date" class="form-control expiration-date"></td>
+                            <td><input type="date" class="form-control delivery-date"></td>
+                            <td><button class="btn btn-danger btn-sm" onclick="deleteRow(this)">🗑</button></td>
+                        </tr>
+                    </tbody>
                 </table>
+                
                 <button class="btn btn-sm btn-primary mt-3" onclick="confirmSave()">💾 Save</button>
             </div>
         </div>
