@@ -40,6 +40,17 @@ function addStockRow() {
     tableBody.appendChild(row);
 }
 
+// Handle "Other" category selection
+function handleOtherCategory(select) {
+    if (select.value === "Other") {
+        let input = document.createElement("input");
+        input.type = "text";
+        input.className = "form-control category";
+        input.placeholder = "Enter category";
+        select.parentNode.replaceChild(input, select);
+    }
+}
+
 // Prevent negative or decimal values in quantity
 function validateQuantity(input) {
     if (input.value < 1 || !Number.isInteger(Number(input.value))) {
@@ -99,7 +110,8 @@ function saveStock() {
     document.querySelectorAll("#stockTable tbody tr").forEach(row => {
         let medicine = row.querySelector(".medicine-name").value;
         let brand = row.querySelector(".brand-name").value;
-        let category = row.querySelector(".category").value;
+        let categoryInput = row.querySelector(".category");
+        let category = categoryInput.tagName === "INPUT" ? categoryInput.value : categoryInput.value;
         let quantity = parseInt(row.querySelector(".quantity").value);
         let expirationDate = row.querySelector(".expiration-date").value;
         let dateDelivered = row.querySelector(".delivery-date").value;
@@ -175,12 +187,7 @@ function editMedicine(index) {
         <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}"></td>
         <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}"></td>
         <td>
-            <select class="form-control category" style="width: 180px;">
-                <option value="Pain Reliever" ${med.category === "Pain Reliever" ? "selected" : ""}>Pain Reliever</option>
-                <option value="Antibiotic" ${med.category === "Antibiotic" ? "selected" : ""}>Antibiotic</option>
-                <option value="Antiseptic" ${med.category === "Antiseptic" ? "selected" : ""}>Antiseptic</option>
-                <option value="Vitamin" ${med.category === "Vitamin" ? "selected" : ""}>Vitamin</option>
-            </select>
+            <input type="text" class="form-control category" value="${med.category}" style="width: 180px;">
         </td>
         <td>
             <button class="btn btn-success btn-sm" onclick="saveUpdatedMedicine(${index})">💾 Save</button>
