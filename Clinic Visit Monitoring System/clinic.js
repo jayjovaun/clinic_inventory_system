@@ -31,7 +31,7 @@ function addStockRow() {
                 <option value="Other">Other</option>
             </select>
         </td>
-        <td><input type="number" class="form-control quantity" style="width: 80px;" min="1" oninput="validateQuantity(this)"></td>
+        <td><input type="number" class="form-control quantity" min="1" oninput="validateQuantity(this)"></td>
         <td><input type="date" class="form-control expiration-date"></td>
         <td><input type="date" class="form-control delivery-date"></td>
         <td><button class="btn btn-danger btn-sm" onclick="deleteRow(this)">🗑</button></td>
@@ -59,14 +59,39 @@ function validateCategoryInput(input) {
     if (input.value.trim() === "") {
         showError(input, "Category cannot be empty");
     } else {
-        clearError(input);
+        removeError(input);
+    }
+}
+
+// Show error message
+function showError(input, message) {
+    input.classList.add("error");
+
+    let errorText = input.nextElementSibling;
+    if (!errorText || !errorText.classList.contains("error-text")) {
+        errorText = document.createElement("div");
+        errorText.classList.add("error-text");
+        input.parentNode.appendChild(errorText);
+    }
+    errorText.textContent = message;
+}
+
+// Remove error message
+function removeError(input) {
+    input.classList.remove("error");
+    let errorText = input.nextElementSibling;
+    if (errorText && errorText.classList.contains("error-text")) {
+        errorText.remove();
     }
 }
 
 // Validate quantity (no negatives or decimals)
 function validateQuantity(input) {
     if (input.value < 1 || !Number.isInteger(Number(input.value))) {
+        showError(input, "Quantity must be greater than 0");
         input.value = "";
+    } else {
+        removeError(input);
     }
 }
 
@@ -96,33 +121,12 @@ function validateInputs() {
                 showError(input, value === "" ? "This field is required" : "Quantity must be greater than 0");
                 isValid = false;
             } else {
-                clearError(input);
+                removeError(input);
             }
         });
     });
 
     return isValid;
-}
-
-// Show validation error
-function showError(input, message) {
-    input.classList.add("error");
-
-    let errorText = input.nextElementSibling;
-    if (!errorText || !errorText.classList.contains("error-text")) {
-        errorText = document.createElement("div");
-        errorText.classList.add("error-text");
-        errorText.textContent = message;
-        input.parentNode.appendChild(errorText);
-    }
-}
-
-// Clear validation error
-function clearError(input) {
-    input.classList.remove("error");
-    if (input.nextElementSibling && input.nextElementSibling.classList.contains("error-text")) {
-        input.nextElementSibling.remove();
-    }
 }
 
 // Save stock function
@@ -168,7 +172,7 @@ function loadInventory() {
             <td>${med.quantity}</td>
             <td>${med.expirationDate}</td>
             <td>${med.dateDelivered}</td>
-            <td>
+            <td class="button-container">
                 <button class="btn btn-warning btn-sm" onclick="dispenseMedicine(${index})">➖ Dispense</button>
                 <button class="btn btn-primary btn-sm" onclick="editMedicine(${index})">✏ Update</button>
                 <button class="btn btn-danger btn-sm" onclick="deleteMedicine(${index})">🗑 Delete</button>
@@ -178,27 +182,7 @@ function loadInventory() {
     });
 }
 
-// Dispense medicine
-function dispenseMedicine(index) {
-    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-    if (confirm("Are you sure you want to dispense this medicine?")) {
-        inventory.splice(index, 1);
-        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
-        loadInventory();
-    }
-}
-
-// Delete medicine from inventory
-function deleteMedicine(index) {
-    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-    if (confirm("Are you sure you want to delete this medicine?")) {
-        inventory.splice(index, 1);
-        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
-        loadInventory();
-    }
-}
-
-// Edit medicine function
+// Edit medicine function (with button alignment fix)
 function editMedicine(index) {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     let med = inventory[index];
@@ -208,10 +192,10 @@ function editMedicine(index) {
         <td><input type="text" class="form-control medicine-name" value="${med.medicine}"></td>
         <td><input type="text" class="form-control brand-name" value="${med.brand}"></td>
         <td><input type="text" class="form-control category" value="${med.category}"></td>
-        <td><input type="number" class="form-control quantity" style="width: 80px;" min="1" value="${med.quantity}" oninput="validateQuantity(this)"></td>
+        <td><input type="number" class="form-control quantity" min="1" value="${med.quantity}" oninput="validateQuantity(this)"></td>
         <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}"></td>
         <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}"></td>
-        <td>
+        <td class="d-flex gap-2">
             <button class="btn btn-success btn-sm" onclick="saveUpdatedMedicine(${index})">💾 Save</button>
             <button class="btn btn-secondary btn-sm" onclick="loadInventory()">❌ Cancel</button>
         </td>
