@@ -31,7 +31,7 @@ function addStockRow() {
                 <option value="Other">Other</option>
             </select>
         </td>
-        <td><input type="number" class="form-control quantity" min="1" oninput="validateQuantity(this)"></td>
+        <td><input type="number" class="form-control quantity" style="width: 80px;" min="1" oninput="validateQuantity(this)"></td>
         <td><input type="date" class="form-control expiration-date"></td>
         <td><input type="date" class="form-control delivery-date"></td>
         <td><button class="btn btn-danger btn-sm" onclick="deleteRow(this)">🗑</button></td>
@@ -57,9 +57,9 @@ function handleCategoryChange(select) {
 // Validate category input if "Other" is selected
 function validateCategoryInput(input) {
     if (input.value.trim() === "") {
-        showValidationError(input, "Category cannot be empty");
+        showError(input, "Category cannot be empty");
     } else {
-        clearValidationError(input);
+        clearError(input);
     }
 }
 
@@ -67,27 +67,6 @@ function validateCategoryInput(input) {
 function validateQuantity(input) {
     if (input.value < 1 || !Number.isInteger(Number(input.value))) {
         input.value = "";
-    }
-}
-
-// Show validation error
-function showValidationError(input, message) {
-    input.classList.add("error");
-
-    let errorText = input.nextElementSibling;
-    if (!errorText || !errorText.classList.contains("error-text")) {
-        errorText = document.createElement("div");
-        errorText.classList.add("error-text");
-        errorText.textContent = message;
-        input.parentNode.appendChild(errorText);
-    }
-}
-
-// Clear validation error
-function clearValidationError(input) {
-    input.classList.remove("error");
-    if (input.nextElementSibling && input.nextElementSibling.classList.contains("error-text")) {
-        input.nextElementSibling.remove();
     }
 }
 
@@ -114,15 +93,63 @@ function validateInputs() {
             let isQuantityField = input.classList.contains("quantity");
 
             if (!value || (isQuantityField && (!/^[1-9]\d*$/.test(value)))) {
-                showValidationError(input, value === "" ? "This field is required" : "Quantity must be greater than 0");
+                showError(input, value === "" ? "This field is required" : "Quantity must be greater than 0");
                 isValid = false;
             } else {
-                clearValidationError(input);
+                clearError(input);
             }
         });
     });
 
     return isValid;
+}
+
+// Show validation error
+function showError(input, message) {
+    input.classList.add("error");
+
+    let errorText = input.nextElementSibling;
+    if (!errorText || !errorText.classList.contains("error-text")) {
+        errorText = document.createElement("div");
+        errorText.classList.add("error-text");
+        errorText.textContent = message;
+        input.parentNode.appendChild(errorText);
+    }
+}
+
+// Clear validation error
+function clearError(input) {
+    input.classList.remove("error");
+    if (input.nextElementSibling && input.nextElementSibling.classList.contains("error-text")) {
+        input.nextElementSibling.remove();
+    }
+}
+
+// Save stock function
+function saveStock() {
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    let recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
+
+    document.querySelectorAll("#stockTable tbody tr").forEach(row => {
+        let medicine = row.querySelector(".medicine-name").value;
+        let brand = row.querySelector(".brand-name").value;
+        let category = row.querySelector(".category") ? row.querySelector(".category").value : row.querySelector(".category-input").value;
+        let quantity = parseInt(row.querySelector(".quantity").value);
+        let expirationDate = row.querySelector(".expiration-date").value;
+        let dateDelivered = row.querySelector(".delivery-date").value;
+
+        let newStock = { medicine, brand, category, quantity, expirationDate, dateDelivered };
+        inventory.push(newStock);
+        recentStocks.unshift(newStock);
+
+        row.remove();
+    });
+
+    localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+    localStorage.setItem("recentStocks", JSON.stringify(recentStocks));
+
+    loadInventory();
+    loadRecentStocks();
 }
 
 // Load inventory function
@@ -171,21 +198,69 @@ function deleteMedicine(index) {
     }
 }
 
-// Save updates to medicine
+// Edit medicine function
+function editMedicine(index) {
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    let med = inventory[index];
+
+    let row = document.querySelector(`#inventoryTableBody tr:nth-child(${index + 1})`);
+    row.innerHTML = `
+        <td><input type="text" class="form-control medicine-name" value="${med.medicine}"></td>
+        <td><input type="text" class="form-control brand-name" value="${med.brand}"></td>
+        <td><input type="text" class="form-control category" value="${med.category}"></td>
+        <td><input type="number" class="form-control quantity" style="width: 80px;" min="1" value="${med.quantity}" oninput="validateQuantity(this)"></td>
+        <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}"></td>
+        <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}"></td>
+        <td>
+            <button class="btn btn-success btn-sm" onclick="saveUpdatedMedicine(${index})">💾 Save</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadInventory()">❌ Cancel</button>
+        </td>
+    `;
+}
+
+// Save updated medicine function
 function saveUpdatedMedicine(index) {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     let row = document.querySelector(`#inventoryTableBody tr:nth-child(${index + 1})`);
-
+    
     let updatedMedicine = {
-        medicine: row.querySelector(".medicine-name").value,
-        brand: row.querySelector(".brand-name").value,
-        category: row.querySelector(".category").value,
-        quantity: row.querySelector(".quantity").value,
+        medicine: row.querySelector(".medicine-name").value.trim(),
+        brand: row.querySelector(".brand-name").value.trim(),
+        category: row.querySelector(".category").value.trim(),
+        quantity: parseInt(row.querySelector(".quantity").value),
         expirationDate: row.querySelector(".expiration-date").value,
-        dateDelivered: row.querySelector(".delivery-date").value,
+        dateDelivered: row.querySelector(".delivery-date").value
     };
 
+    // Validate inputs
+    if (!updatedMedicine.medicine || !updatedMedicine.brand || !updatedMedicine.category || 
+        isNaN(updatedMedicine.quantity) || updatedMedicine.quantity < 1 || 
+        !updatedMedicine.expirationDate || !updatedMedicine.dateDelivered) {
+        alert("Please fill in all fields with valid values");
+        return;
+    }
+
+    // Update the inventory
     inventory[index] = updatedMedicine;
     localStorage.setItem("medicineInventory", JSON.stringify(inventory));
     loadInventory();
+}
+
+// Load recent stocks
+function loadRecentStocks() {
+    let recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
+    let tableBody = document.querySelector("#recentStocksTable tbody");
+    tableBody.innerHTML = "";
+
+    recentStocks.slice(0, 5).forEach(stock => {
+        let row = `<tr>
+            <td>${stock.medicine}</td>
+            <td>${stock.brand}</td>
+            <td>${stock.category}</td>
+            <td>${stock.quantity}</td>
+            <td>${stock.expirationDate}</td>
+            <td>${stock.dateDelivered}</td>
+        </tr>`;
+        tableBody.innerHTML += row;
+    });
 }
