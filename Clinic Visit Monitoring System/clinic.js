@@ -31,7 +31,7 @@ function addStockRow() {
                 <option value="Other">Other</option>
             </select>
         </td>
-        <td><input type="number" class="form-control quantity" min="1" oninput="validateQuantity(this)"></td>
+        <td><input type="number" class="form-control quantity" style="width: 80px;" min="1" oninput="validateQuantity(this)"></td>
         <td><input type="date" class="form-control expiration-date"></td>
         <td><input type="date" class="form-control delivery-date"></td>
         <td><button class="btn btn-danger btn-sm" onclick="deleteRow(this)">🗑</button></td>
@@ -49,7 +49,6 @@ function handleCategoryChange(select) {
         input.placeholder = "Enter category";
         input.setAttribute("onblur", "validateCategoryInput(this)");
 
-
         select.parentNode.replaceChild(input, select);
         input.focus();
     }
@@ -58,18 +57,9 @@ function handleCategoryChange(select) {
 // Validate category input if "Other" is selected
 function validateCategoryInput(input) {
     if (input.value.trim() === "") {
-        input.classList.add("error");
-        if (!input.nextElementSibling || !input.nextElementSibling.classList.contains("error-text")) {
-            let errorText = document.createElement("div");
-            errorText.classList.add("error-text");
-            errorText.textContent = "Category cannot be empty";
-            input.parentNode.appendChild(errorText);
-        }
+        showError(input, "Category cannot be empty");
     } else {
-        input.classList.remove("error");
-        if (input.nextElementSibling && input.nextElementSibling.classList.contains("error-text")) {
-            input.nextElementSibling.remove();
-        }
+        clearError(input);
     }
 }
 
@@ -103,25 +93,36 @@ function validateInputs() {
             let isQuantityField = input.classList.contains("quantity");
 
             if (!value || (isQuantityField && (!/^[1-9]\d*$/.test(value)))) {
-                input.classList.add("error");
-
-                if (!input.nextElementSibling || !input.nextElementSibling.classList.contains("error-text")) {
-                    let errorText = document.createElement("div");
-                    errorText.classList.add("error-text");
-                    errorText.textContent = value === "" ? "This field is required" : "Quantity must be greater than 0";
-                    input.parentNode.appendChild(errorText);
-                }
+                showError(input, value === "" ? "This field is required" : "Quantity must be greater than 0");
                 isValid = false;
             } else {
-                input.classList.remove("error");
-                if (input.nextElementSibling && input.nextElementSibling.classList.contains("error-text")) {
-                    input.nextElementSibling.remove();
-                }
+                clearError(input);
             }
         });
     });
 
     return isValid;
+}
+
+// Show validation error
+function showError(input, message) {
+    input.classList.add("error");
+
+    let errorText = input.nextElementSibling;
+    if (!errorText || !errorText.classList.contains("error-text")) {
+        errorText = document.createElement("div");
+        errorText.classList.add("error-text");
+        errorText.textContent = message;
+        input.parentNode.appendChild(errorText);
+    }
+}
+
+// Clear validation error
+function clearError(input) {
+    input.classList.remove("error");
+    if (input.nextElementSibling && input.nextElementSibling.classList.contains("error-text")) {
+        input.nextElementSibling.remove();
+    }
 }
 
 // Save stock function
@@ -197,7 +198,6 @@ function deleteMedicine(index) {
     }
 }
 
-
 // Edit medicine function
 function editMedicine(index) {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
@@ -208,7 +208,7 @@ function editMedicine(index) {
         <td><input type="text" class="form-control medicine-name" value="${med.medicine}"></td>
         <td><input type="text" class="form-control brand-name" value="${med.brand}"></td>
         <td><input type="text" class="form-control category" value="${med.category}"></td>
-        <td><input type="number" class="form-control quantity" min="1" value="${med.quantity}" oninput="validateQuantity(this)"></td>
+        <td><input type="number" class="form-control quantity" style="width: 80px;" min="1" value="${med.quantity}" oninput="validateQuantity(this)"></td>
         <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}"></td>
         <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}"></td>
         <td>
@@ -217,6 +217,3 @@ function editMedicine(index) {
         </td>
     `;
 }
-
-
-
