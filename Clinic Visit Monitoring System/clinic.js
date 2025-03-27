@@ -145,6 +145,16 @@ function loadInventory() {
     });
 }
 
+// Dispense medicine (removes from inventory)
+function dispenseMedicine(index) {
+    if (confirm("Are you sure you want to dispense this medicine?")) {
+        let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+        inventory.splice(index, 1);
+        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+        loadInventory();
+    }
+}
+
 // Edit a medicine entry
 function editMedicine(index) {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
@@ -188,14 +198,6 @@ function saveUpdatedMedicine(index) {
         dateDelivered: row.querySelector(".delivery-date").value
     };
 
-    localStorage.setItem("medicineInventory", JSON.stringify(inventory));
-    loadInventory();
-}
-
-// Delete a medicine entry
-function deleteMedicine(index) {
-    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-    inventory.splice(index, 1);
     localStorage.setItem("medicineInventory", JSON.stringify(inventory));
     loadInventory();
 }
