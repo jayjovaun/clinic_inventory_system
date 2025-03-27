@@ -24,6 +24,25 @@
         .main-content { margin-left: 270px; padding: 20px; width: 100%; }
         .error { border: 2px solid red; }
         .error-text { color: red; font-size: 12px; display: none; }
+        .form-control {
+    width: 100%; /* Makes all input fields full width within their container */
+    max-width: 200px; /* Set a consistent max width for input fields */
+    height: 36px; /* Ensures height consistency */
+    padding: 5px; /* Padding for better spacing */
+    font-size: 14px; /* Ensures text consistency */
+}
+
+select.form-control {
+    appearance: none; /* Removes default styles */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 100%;
+    max-width: 200px;
+    height: 36px;
+    padding: 5px;
+    font-size: 14px;
+}
+
     </style>
 </head>
 <body>
@@ -64,16 +83,17 @@
                     <tbody>
                         <tr>
                             <td><input type="text" class="form-control medicine-name"></td>
-                            <td><input type="text" class="form-control brand-name"></td>
-                            <td>
-                                <select class="form-control category" style="width: 180px;" onchange="handleOtherCategory(this)">
-                                    <option value="Pain Reliever">Pain Reliever</option>
-                                    <option value="Antibiotic">Antibiotic</option>
-                                    <option value="Antiseptic">Antiseptic</option>
-                                    <option value="Vitamin">Vitamin</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </td>
+<td><input type="text" class="form-control brand-name"></td>
+<td>
+    <select class="form-control category" onchange="handleCategoryChange(this)">
+        <option value="Pain Reliever">Pain Reliever</option>
+        <option value="Antibiotic">Antibiotic</option>
+        <option value="Antiseptic">Antiseptic</option>
+        <option value="Vitamin">Vitamin</option>
+        <option value="Other">Other</option>
+    </select>
+</td>
+
                             <td><input type="number" class="form-control quantity" style="width: 80px;" min="1" oninput="validateQuantity(this)"></td>
                             <td><input type="date" class="form-control expiration-date"></td>
                             <td><input type="date" class="form-control delivery-date"></td>
