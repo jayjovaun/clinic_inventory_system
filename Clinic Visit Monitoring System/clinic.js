@@ -1,7 +1,22 @@
 document.addEventListener("DOMContentLoaded", function () {
+    highlightActivePage();
     loadInventory();
 });
 
+// Highlight the active sidebar link
+function highlightActivePage() {
+    let path = window.location.pathname.split("/").pop();
+    let pageMap = {
+        "index.html": "stockEntry",
+        "inventory.html": "manageInventory",
+        "reports.html": "reports"
+    };
+    if (pageMap[path]) {
+        document.getElementById(pageMap[path]).classList.add("active");
+    }
+}
+
+// Add new stock row
 function addStockRow() {
     let table = document.getElementById("stockTable").getElementsByTagName("tbody")[0];
     let row = table.insertRow();
@@ -10,45 +25,31 @@ function addStockRow() {
         <td><input type="text" class="form-control brand"><span class="error-text">Enter brand name.</span></td>
         <td>
             <input type="number" class="form-control quantity" min="1" step="1" oninput="validateQuantity(this)">
-            <span class="error-text">Quantity must be a whole number (at least 1).</span>
+            <span class="error-text">Quantity must be at least 1.</span>
         </td>
         <td><input type="date" class="form-control expiration"><span class="error-text">Select an expiration date.</span></td>
-        <td><input type="date" class="form-control dateDelivered"><span class="error-text">Select date delivered.</span></td>
-        <td>
-            <select class="form-control category" onchange="toggleInput(this, 'category')">
-                <option value="">Select Category</option>
-                <option value="Antibiotic">Antibiotic</option>
-                <option value="Analgesic">Analgesic</option>
-                <option value="Other">Other</option>
-            </select>
-        </td>
+        <td><input type="date" class="form-control delivered"><span class="error-text">Select a delivery date.</span></td>
+        <td><input type="text" class="form-control category"><span class="error-text">Enter category.</span></td>
         <td><button class="btn btn-sm btn-danger" onclick="confirmDelete(this)">❌</button></td>
     `;
 }
 
-function toggleInput(select, type) {
-    if (select.value === "Other") {
-        let input = document.createElement("input");
-        input.type = "text";
-        input.className = `form-control ${type}-custom`;
-        input.placeholder = `Enter custom ${type}`;
-        select.parentNode.replaceChild(input, select);
-    }
-}
-
+// Delete confirmation
 function confirmDelete(button) {
     if (confirm("Are you sure you want to delete this entry?")) {
         button.closest("tr").remove();
     }
 }
 
+// Validate quantity input
 function validateQuantity(input) {
     let value = input.value;
     if (value.includes(".") || value.includes(",")) {
-        input.value = Math.floor(value); // Remove decimal
+        input.value = Math.floor(value);
     }
 }
 
+// Save stock with validation
 function confirmSave() {
     if (validateStockInputs()) {
         if (confirm("Are you sure you want to add this?")) {
@@ -59,40 +60,43 @@ function confirmSave() {
     }
 }
 
+// Validate stock input fields
 function validateStockInputs() {
     let isValid = true;
     document.querySelectorAll("#stockTable tbody tr").forEach(row => {
-        let inputs = row.querySelectorAll("input, select");
-        inputs.forEach(input => {
+        row.querySelectorAll("input").forEach(input => {
             let errorMsg = input.nextElementSibling;
             if (!input.value.trim() || (input.type === "number" && input.value <= 0)) {
                 input.classList.add("error");
-                if (errorMsg) errorMsg.style.display = "block";
+                errorMsg.style.display = "block";
                 isValid = false;
             } else {
                 input.classList.remove("error");
-                if (errorMsg) errorMsg.style.display = "none";
+                errorMsg.style.display = "none";
             }
         });
     });
     return isValid;
 }
 
+// Save stock to recent stocks table
 function saveStock() {
     let table = document.getElementById("stockTable").getElementsByTagName("tbody")[0];
     let recentTable = document.getElementById("recentStocksTable").getElementsByTagName("tbody")[0];
+    
     table.querySelectorAll("tr").forEach(row => {
         let medicine = row.querySelector(".medicine").value.trim();
         let brand = row.querySelector(".brand").value.trim();
         let quantity = row.querySelector(".quantity").value.trim();
         let expiration = row.querySelector(".expiration").value;
-        let dateDelivered = row.querySelector(".dateDelivered").value;
-        let categoryInput = row.querySelector(".category") || row.querySelector(".category-custom");
-        let category = categoryInput ? categoryInput.value.trim() : "";
+        let delivered = row.querySelector(".delivered").value;
+        let category = row.querySelector(".category").value.trim();
 
         let newRow = recentTable.insertRow();
-        newRow.innerHTML = `<td>${medicine}</td><td>${brand}</td><td>${quantity}</td><td>${expiration}</td><td>${dateDelivered}</td><td>${category}</td>`;
+        newRow.innerHTML = `<td>${medicine}</td><td>${brand}</td><td>${quantity}</td><td>${expiration}</td><td>${delivered}</td><td>${category}</td>`;
+        
         row.remove();
     });
+
     alert("Stock added successfully!");
 }

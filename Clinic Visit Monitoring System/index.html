@@ -14,8 +14,13 @@
             width: 250px; height: 100vh; background-color: #343a40;
             color: white; padding: 20px; position: fixed; text-align: center;
         }
-        .sidebar a { color: white; text-decoration: none; display: block; padding: 10px; margin: 5px 0; }
-        .sidebar a:hover { background-color: #495057; border-radius: 5px; }
+        .sidebar a {
+            color: white; text-decoration: none; display: block;
+            padding: 10px; margin: 5px 0;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background-color: #495057; border-radius: 5px;
+        }
         .main-content { margin-left: 270px; padding: 20px; width: 100%; }
         .error { border: 2px solid red; }
         .error-text { color: red; font-size: 12px; display: none; }
@@ -26,9 +31,9 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <h3>Clinic Inventory</h3>
-        <a href="index.html">Stock Entry</a>
-        <a href="inventory.html">Manage Inventory</a>
-        <a href="reports.html">Reports</a>
+        <a href="index.html" class="nav-link" id="stockEntry">Stock Entry</a>
+        <a href="inventory.html" class="nav-link" id="manageInventory">Manage Inventory</a>
+        <a href="reports.html" class="nav-link" id="reports">Reports</a>
         <a href="logout.html" class="text-danger">Logout</a>
     </div>
 
@@ -47,10 +52,10 @@
                     <thead>
                         <tr>
                             <th>Medicine</th>
-                            <th>Brand Name</th>  <!-- Updated from "Milligram" to "Brand Name" -->
+                            <th>Brand Name</th>
                             <th>Quantity</th>
                             <th>Expiration Date</th>
-                            <th> Date Delivered</th>
+                            <th>Date Delivered</th>
                             <th>Category</th>
                             <th>Action</th>
                         </tr>
@@ -71,10 +76,10 @@
                     <thead>
                         <tr>
                             <th>Medicine</th>
-                            <th>Brand Name</th>  <!-- Updated from "Milligram" to "Brand Name" -->
+                            <th>Brand Name</th>
                             <th>Quantity</th>
                             <th>Expiration Date</th>
-                            <th> Date Delivered</th>
+                            <th>Date Delivered</th>
                             <th>Category</th>
                         </tr>
                     </thead>
