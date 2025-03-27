@@ -2,7 +2,6 @@ document.addEventListener("DOMContentLoaded", function () {
     highlightActivePage();
     loadInventory();
     loadRecentStocks();
-    handleDynamicCategoryInputs();
 });
 
 // Highlight active sidebar link
@@ -12,47 +11,6 @@ function highlightActivePage() {
         if (link.getAttribute("href") === currentPage) {
             link.classList.add("active");
         }
-    });
-}
-
-// Convert "Other" category option into an input box dynamically
-function handleCategoryChange(select) {
-    if (select.value === "Other") {
-        let input = document.createElement("input");
-        input.type = "text";
-        input.classList.add("form-control", "category-input");
-        input.placeholder = "Enter category";
-        input.setAttribute("onblur", "restoreCategoryDropdown(this)");
-
-        let parent = select.parentNode;
-        parent.innerHTML = ""; 
-        parent.appendChild(input);
-        input.focus();
-    }
-}
-
-// Restore dropdown if input is empty
-function restoreCategoryDropdown(input) {
-    let parent = input.parentNode;
-    if (input.value.trim() === "") {
-        parent.innerHTML = `
-            <select class="form-control category" onchange="handleCategoryChange(this)">
-                <option value="Pain Reliever">Pain Reliever</option>
-                <option value="Antibiotic">Antibiotic</option>
-                <option value="Antiseptic">Antiseptic</option>
-                <option value="Vitamin">Vitamin</option>
-                <option value="Other">Other</option>
-            </select>
-        `;
-    }
-}
-
-// Apply event listener to existing category dropdowns in index.html
-function handleDynamicCategoryInputs() {
-    document.querySelectorAll(".category").forEach(select => {
-        select.addEventListener("change", function () {
-            handleCategoryChange(this);
-        });
     });
 }
 
@@ -80,6 +38,39 @@ function addStockRow() {
     `;
 
     tableBody.appendChild(row);
+}
+
+// Handle category "Other" selection
+function handleCategoryChange(select) {
+    if (select.value === "Other") {
+        let input = document.createElement("input");
+        input.type = "text";
+        input.classList.add("form-control", "category-input");
+        input.placeholder = "Enter category";
+        input.setAttribute("onblur", "validateCategoryInput(this)");
+
+
+        select.parentNode.replaceChild(input, select);
+        input.focus();
+    }
+}
+
+// Validate category input if "Other" is selected
+function validateCategoryInput(input) {
+    if (input.value.trim() === "") {
+        input.classList.add("error");
+        if (!input.nextElementSibling || !input.nextElementSibling.classList.contains("error-text")) {
+            let errorText = document.createElement("div");
+            errorText.classList.add("error-text");
+            errorText.textContent = "Category cannot be empty";
+            input.parentNode.appendChild(errorText);
+        }
+    } else {
+        input.classList.remove("error");
+        if (input.nextElementSibling && input.nextElementSibling.classList.contains("error-text")) {
+            input.nextElementSibling.remove();
+        }
+    }
 }
 
 // Validate quantity (no negatives or decimals)
@@ -205,3 +196,27 @@ function deleteMedicine(index) {
         loadInventory();
     }
 }
+
+
+// Edit medicine function
+function editMedicine(index) {
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    let med = inventory[index];
+
+    let row = document.querySelector(`#inventoryTableBody tr:nth-child(${index + 1})`);
+    row.innerHTML = `
+        <td><input type="text" class="form-control medicine-name" value="${med.medicine}"></td>
+        <td><input type="text" class="form-control brand-name" value="${med.brand}"></td>
+        <td><input type="text" class="form-control category" value="${med.category}"></td>
+        <td><input type="number" class="form-control quantity" min="1" value="${med.quantity}" oninput="validateQuantity(this)"></td>
+        <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}"></td>
+        <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}"></td>
+        <td>
+            <button class="btn btn-success btn-sm" onclick="saveUpdatedMedicine(${index})">💾 Save</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadInventory()">❌ Cancel</button>
+        </td>
+    `;
+}
+
+
+
