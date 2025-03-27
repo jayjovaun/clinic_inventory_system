@@ -14,7 +14,7 @@ function highlightActivePage() {
     });
 }
 
-// Add a new row for stock entry
+// Add a new row for stock entry in index.html
 function addStockRow() {
     let tableBody = document.querySelector("#stockTable tbody");
     let row = document.createElement("tr");
@@ -22,7 +22,7 @@ function addStockRow() {
     row.innerHTML = `
         <td><input type="text" class="form-control medicine-name" placeholder="Enter medicine"></td>
         <td><input type="text" class="form-control brand-name" placeholder="Enter brand name"></td>
-        <td><input type="number" class="form-control quantity" placeholder="Enter quantity" min="1" step="1"></td>
+        <td><input type="number" class="form-control quantity" placeholder="Enter quantity"></td>
         <td><input type="date" class="form-control expiration-date"></td>
         <td><input type="date" class="form-control delivery-date"></td>
         <td>
@@ -45,34 +45,24 @@ function deleteRow(button) {
     button.closest("tr").remove();
 }
 
-// Save stock data
-function confirmSave() {
-    if (!validateInputs()) return;
-
-    if (confirm("Are you sure you want to add this?")) {
-        saveStock();
-    }
-}
-
-// Validate input fields
+// Validate input fields with quantity restriction
 function validateInputs() {
     let isValid = true;
-    document.querySelectorAll("#stockTable tbody tr").forEach(row => {
+    document.querySelectorAll("#stockTable tbody tr, #inventoryTableBody tr").forEach(row => {
         row.querySelectorAll("input, select").forEach(input => {
             let value = input.value.trim();
             let isQuantityField = input.classList.contains("quantity");
-
-            // Create or find error text element
             let errorText = input.nextElementSibling;
+
             if (!errorText || !errorText.classList.contains("error-text")) {
                 errorText = document.createElement("div");
                 errorText.classList.add("error-text");
                 input.parentNode.appendChild(errorText);
             }
 
-            if (value === "" || (isQuantityField && (!Number.isInteger(+value) || +value <= 0))) {
+            if (value === "" || (isQuantityField && (!/^[1-9]\d*$/.test(value)))) {
                 input.classList.add("error");
-                errorText.textContent = isQuantityField ? "Quantity must be a whole number greater than 0" : "This field is required";
+                errorText.textContent = value === "" ? "This field is required" : "Quantity must be a whole number greater than 0";
                 errorText.style.display = "block";
                 isValid = false;
             } else {
@@ -83,6 +73,15 @@ function validateInputs() {
     });
 
     return isValid;
+}
+
+// Save stock with validation
+function confirmSave() {
+    if (validateInputs()) {
+        if (confirm("Are you sure you want to add this?")) {
+            saveStock();
+        }
+    }
 }
 
 // Save stock and add to recent stocks
@@ -112,7 +111,7 @@ function saveStock() {
     loadRecentStocks();
 }
 
-// Load and display inventory (sorted by expiration date)
+// Load and display inventory
 function loadInventory() {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     inventory.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate));
@@ -130,7 +129,7 @@ function loadInventory() {
             <td>${med.dateDelivered}</td>
             <td>
                 <button class="btn btn-warning btn-sm" onclick="dispenseMedicine(${index})">➖ Dispense</button>
-                <button class="btn btn-primary btn-sm" onclick="updateMedicine(${index})">✏️ Update</button>
+                <button class="btn btn-primary btn-sm" onclick="editMedicine(${index})">✏ Update</button>
                 <button class="btn btn-danger btn-sm" onclick="deleteMedicine(${index})">🗑 Delete</button>
             </td>
         </tr>`;
@@ -138,72 +137,49 @@ function loadInventory() {
     });
 }
 
-// Load recently added stocks
-function loadRecentStocks() {
-    let recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
-    let tableBody = document.querySelector("#recentStocksTable tbody");
-    tableBody.innerHTML = "";
-
-    recentStocks.forEach(med => {
-        let row = `<tr>
-            <td>${med.medicine}</td>
-            <td>${med.brand}</td>
-            <td>${med.category}</td>
-            <td>${med.quantity}</td>
-            <td>${med.expirationDate}</td>
-            <td>${med.dateDelivered}</td>
-        </tr>`;
-        tableBody.innerHTML += row;
-    });
-}
-
-// Update medicine details
-function updateMedicine(index) {
+// Edit a medicine entry
+function editMedicine(index) {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     let med = inventory[index];
 
-    let newMedicine = prompt("Enter new medicine name:", med.medicine);
-    let newBrand = prompt("Enter new brand name:", med.brand);
-    let newCategory = prompt("Enter new category:", med.category);
-    let newQuantity = prompt("Enter new quantity:", med.quantity);
-    let newExpirationDate = prompt("Enter new expiration date:", med.expirationDate);
-    let newDateDelivered = prompt("Enter new delivery date:", med.dateDelivered);
-
-    if (newMedicine && newBrand && newCategory && newQuantity && newExpirationDate && newDateDelivered) {
-        if (isNaN(newQuantity) || newQuantity <= 0 || !Number.isInteger(Number(newQuantity))) {
-            alert("Quantity must be a whole number greater than 0.");
-            return;
-        }
-
-        inventory[index] = {
-            medicine: newMedicine,
-            brand: newBrand,
-            category: newCategory,
-            quantity: parseInt(newQuantity),
-            expirationDate: newExpirationDate,
-            dateDelivered: newDateDelivered
-        };
-
-        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
-        loadInventory();
-    }
+    let row = document.querySelector(`#inventoryTableBody tr:nth-child(${index + 1})`);
+    row.innerHTML = `
+        <td><input type="text" class="form-control medicine-name" value="${med.medicine}"></td>
+        <td><input type="text" class="form-control brand-name" value="${med.brand}"></td>
+        <td><input type="number" class="form-control quantity" value="${med.quantity}"></td>
+        <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}"></td>
+        <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}"></td>
+        <td>
+            <select class="form-control category">
+                <option value="Pain Reliever" ${med.category === "Pain Reliever" ? "selected" : ""}>Pain Reliever</option>
+                <option value="Antibiotic" ${med.category === "Antibiotic" ? "selected" : ""}>Antibiotic</option>
+                <option value="Antiseptic" ${med.category === "Antiseptic" ? "selected" : ""}>Antiseptic</option>
+                <option value="Vitamin" ${med.category === "Vitamin" ? "selected" : ""}>Vitamin</option>
+            </select>
+        </td>
+        <td>
+            <button class="btn btn-success btn-sm" onclick="saveUpdatedMedicine(${index})">💾 Save</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadInventory()">❌ Cancel</button>
+        </td>
+    `;
 }
 
-// Delete a medicine entry
-function deleteMedicine(index) {
-    if (confirm("Are you sure you want to delete this medicine?")) {
-        let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-        inventory.splice(index, 1);
-        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
-        loadInventory();
-    }
-}
+// Save updated medicine
+function saveUpdatedMedicine(index) {
+    if (!validateInputs()) return;
 
-// Search inventory
-function searchInventory() {
-    let searchTerm = document.getElementById("searchMedicine").value.toLowerCase();
-    document.querySelectorAll("#inventoryTableBody tr").forEach(row => {
-        let medicineName = row.children[0].textContent.toLowerCase();
-        row.style.display = medicineName.includes(searchTerm) ? "" : "none";
-    });
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    let row = document.querySelector(`#inventoryTableBody tr:nth-child(${index + 1})`);
+
+    inventory[index] = {
+        medicine: row.querySelector(".medicine-name").value,
+        brand: row.querySelector(".brand-name").value,
+        category: row.querySelector(".category").value,
+        quantity: parseInt(row.querySelector(".quantity").value),
+        expirationDate: row.querySelector(".expiration-date").value,
+        dateDelivered: row.querySelector(".delivery-date").value
+    };
+
+    localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+    loadInventory();
 }
