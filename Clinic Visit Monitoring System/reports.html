@@ -8,64 +8,37 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        body {
-            display: flex;
-        }
+        body { display: flex; }
         .sidebar {
-            width: 250px;
-            height: 100vh;
-            background-color: #343a40;
-            color: white;
-            padding: 20px;
-            position: fixed;
-            text-align: center;
-        }
-        .sidebar img {
-            width: 80%;
-            max-height: 100px;
-            margin-bottom: 15px;
+            width: 250px; height: 100vh; background-color: #343a40;
+            color: white; padding: 20px; position: fixed; text-align: center;
         }
         .sidebar a {
-            color: white;
-            text-decoration: none;
-            display: block;
-            padding: 10px;
-            margin: 5px 0;
+            color: white; text-decoration: none; display: block;
+            padding: 10px; margin: 5px 0;
         }
-        .sidebar a:hover {
-            background-color: #495057;
-            border-radius: 5px;
+        .sidebar a:hover, .sidebar a.active {
+            background-color: #495057; border-radius: 5px;
         }
-        .main-content {
-            margin-left: 270px;
-            padding: 20px;
-            width: 100%;
-        }
-        .dashboard-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
+        .main-content { margin-left: 270px; padding: 20px; width: 100%; }
         .filter-section {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
+            display: flex; justify-content: space-between; margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
+
     <div class="sidebar">
-        <img src="images/bsu_logo.png" alt="BSU Logo">
-        <a href="index.html">Dashboard</a>
+        <h3>Clinic Inventory</h3>
+        <a href="index.html">Stock Entry</a>
         <a href="inventory.html">Manage Inventory</a>
-        <a href="reports.html">Medicine Inventory</a>
+        <a href="reports.html" class="active">Medicine Inventory</a>
         <a href="logout.html" class="text-danger">Logout</a>
     </div>
 
     <div class="main-content">
-        <div class="dashboard-header">
-            <h1>Medicine Inventory Report</h1>
-            <p>View and manage inventory records.</p>
-        </div>
+        <h1>Medicine Inventory Report</h1>
+        <p>View and manage inventory records.</p>
 
         <!-- Filter & Search -->
         <div class="filter-section">
@@ -90,15 +63,16 @@
                     <thead>
                         <tr>
                             <th>Medicine</th>
+                            <th>Brand Name</th>
                             <th>Category</th>
                             <th>Quantity</th>
-                            <th>Milligram</th>
                             <th>Expiration Date</th>
+                            <th>Date Delivered</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="inventoryTableBody">
-                        <!-- Data will be inserted dynamically -->
+                        <!-- Data will be dynamically inserted here -->
                     </tbody>
                 </table>
             </div>

@@ -1,102 +1,206 @@
 document.addEventListener("DOMContentLoaded", function () {
     highlightActivePage();
     loadInventory();
+    loadRecentStocks();
 });
 
 // Highlight the active sidebar link
 function highlightActivePage() {
-    let path = window.location.pathname.split("/").pop();
-    let pageMap = {
-        "index.html": "stockEntry",
-        "inventory.html": "manageInventory",
-        "reports.html": "reports"
-    };
-    if (pageMap[path]) {
-        document.getElementById(pageMap[path]).classList.add("active");
-    }
-}
-
-// Add new stock row
-function addStockRow() {
-    let table = document.getElementById("stockTable").getElementsByTagName("tbody")[0];
-    let row = table.insertRow();
-    row.innerHTML = `
-        <td><input type="text" class="form-control medicine"><span class="error-text">Enter medicine name.</span></td>
-        <td><input type="text" class="form-control brand"><span class="error-text">Enter brand name.</span></td>
-        <td>
-            <input type="number" class="form-control quantity" min="1" step="1" oninput="validateQuantity(this)">
-            <span class="error-text">Quantity must be at least 1.</span>
-        </td>
-        <td><input type="date" class="form-control expiration"><span class="error-text">Select an expiration date.</span></td>
-        <td><input type="date" class="form-control delivered"><span class="error-text">Select a delivery date.</span></td>
-        <td><input type="text" class="form-control category"><span class="error-text">Enter category.</span></td>
-        <td><button class="btn btn-sm btn-danger" onclick="confirmDelete(this)">❌</button></td>
-    `;
-}
-
-// Delete confirmation
-function confirmDelete(button) {
-    if (confirm("Are you sure you want to delete this entry?")) {
-        button.closest("tr").remove();
-    }
-}
-
-// Validate quantity input
-function validateQuantity(input) {
-    let value = input.value;
-    if (value.includes(".") || value.includes(",")) {
-        input.value = Math.floor(value);
-    }
-}
-
-// Save stock with validation
-function confirmSave() {
-    if (validateStockInputs()) {
-        if (confirm("Are you sure you want to add this?")) {
-            saveStock();
+    let currentPage = window.location.pathname.split("/").pop();
+    document.querySelectorAll(".sidebar a").forEach(link => {
+        if (link.getAttribute("href") === currentPage) {
+            link.classList.add("active");
         }
-    } else {
-        alert("Please correct the errors before saving.");
+    });
+}
+
+// Add a new row for stock entry
+function addStockRow() {
+    let tableBody = document.querySelector("#stockTable tbody");
+    let row = document.createElement("tr");
+
+    row.innerHTML = `
+        <td><input type="text" class="form-control medicine-name" placeholder="Enter medicine"></td>
+        <td><input type="text" class="form-control brand-name" placeholder="Enter brand name"></td>
+        <td><input type="number" class="form-control quantity" placeholder="Enter quantity"></td>
+        <td><input type="date" class="form-control expiration-date"></td>
+        <td><input type="date" class="form-control delivery-date"></td>
+        <td>
+            <select class="form-control category">
+                <option value="Pain Reliever">Pain Reliever</option>
+                <option value="Antibiotic">Antibiotic</option>
+                <option value="Antiseptic">Antiseptic</option>
+                <option value="Vitamin">Vitamin</option>
+                <option value="Other">Other</option>
+            </select>
+        </td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteRow(this)">🗑</button></td>
+    `;
+
+    tableBody.appendChild(row);
+}
+
+// Delete a stock row
+function deleteRow(button) {
+    button.closest("tr").remove();
+}
+
+// Save stock data
+function confirmSave() {
+    if (!validateInputs()) return;
+
+    if (confirm("Are you sure you want to add this?")) {
+        saveStock();
     }
 }
 
-// Validate stock input fields
-function validateStockInputs() {
+// Validate input fields
+function validateInputs() {
     let isValid = true;
     document.querySelectorAll("#stockTable tbody tr").forEach(row => {
-        row.querySelectorAll("input").forEach(input => {
-            let errorMsg = input.nextElementSibling;
-            if (!input.value.trim() || (input.type === "number" && input.value <= 0)) {
+        row.querySelectorAll("input, select").forEach(input => {
+            if (input.value.trim() === "" || (input.type === "number" && input.value <= 0)) {
                 input.classList.add("error");
-                errorMsg.style.display = "block";
                 isValid = false;
             } else {
                 input.classList.remove("error");
-                errorMsg.style.display = "none";
             }
         });
     });
+
     return isValid;
 }
 
-// Save stock to recent stocks table
+// Save stock and add to recent stocks
 function saveStock() {
-    let table = document.getElementById("stockTable").getElementsByTagName("tbody")[0];
-    let recentTable = document.getElementById("recentStocksTable").getElementsByTagName("tbody")[0];
-    
-    table.querySelectorAll("tr").forEach(row => {
-        let medicine = row.querySelector(".medicine").value.trim();
-        let brand = row.querySelector(".brand").value.trim();
-        let quantity = row.querySelector(".quantity").value.trim();
-        let expiration = row.querySelector(".expiration").value;
-        let delivered = row.querySelector(".delivered").value;
-        let category = row.querySelector(".category").value.trim();
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    let recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
 
-        let newRow = recentTable.insertRow();
-        newRow.innerHTML = `<td>${medicine}</td><td>${brand}</td><td>${quantity}</td><td>${expiration}</td><td>${delivered}</td><td>${category}</td>`;
-        
+    document.querySelectorAll("#stockTable tbody tr").forEach(row => {
+        let medicine = row.querySelector(".medicine-name").value;
+        let brand = row.querySelector(".brand-name").value;
+        let quantity = parseInt(row.querySelector(".quantity").value);
+        let expirationDate = row.querySelector(".expiration-date").value;
+        let dateDelivered = row.querySelector(".delivery-date").value;
+        let category = row.querySelector(".category").value;
+
+        let newStock = { medicine, brand, category, quantity, expirationDate, dateDelivered };
+        inventory.push(newStock);
+        recentStocks.unshift(newStock); // Add to the top
+
         row.remove();
     });
 
-    alert("Stock added successfully!");
+    localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+    localStorage.setItem("recentStocks", JSON.stringify(recentStocks));
+
+    loadInventory();
+    loadRecentStocks();
+}
+
+// Load and display inventory (sorted by expiration date)
+function loadInventory() {
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    inventory.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate)); // Sort by expiry
+
+    let tableBody = document.querySelector("#inventoryTableBody");
+    tableBody.innerHTML = "";
+
+    inventory.forEach((med, index) => {
+        let row = `<tr>
+            <td>${med.medicine}</td>
+            <td>${med.brand}</td>
+            <td>${med.category}</td>
+            <td>${med.quantity}</td>
+            <td>${med.expirationDate}</td>
+            <td>${med.dateDelivered}</td>
+            <td>
+                <button class="btn btn-warning btn-sm" onclick="dispenseMedicine(${index})">➖ Dispense</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteMedicine(${index})">🗑 Delete</button>
+            </td>
+        </tr>`;
+        tableBody.innerHTML += row;
+    });
+}
+
+// Load recently added stocks
+function loadRecentStocks() {
+    let recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
+    let tableBody = document.querySelector("#recentStocksTable tbody");
+    tableBody.innerHTML = "";
+
+    recentStocks.forEach(med => {
+        let row = `<tr>
+            <td>${med.medicine}</td>
+            <td>${med.brand}</td>
+            <td>${med.category}</td>
+            <td>${med.quantity}</td>
+            <td>${med.expirationDate}</td>
+            <td>${med.dateDelivered}</td>
+        </tr>`;
+        tableBody.innerHTML += row;
+    });
+}
+
+// Dispense medicine (reduce quantity)
+function dispenseMedicine(index) {
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    
+    if (inventory[index].quantity > 0) {
+        inventory[index].quantity--;
+
+        if (inventory[index].quantity === 0) {
+            if (confirm("Stock is empty. Remove from inventory?")) {
+                inventory.splice(index, 1);
+            }
+        }
+
+        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+        loadInventory();
+    } else {
+        alert("Insufficient stock!");
+    }
+}
+
+// Delete a medicine entry
+function deleteMedicine(index) {
+    if (confirm("Are you sure you want to delete this medicine?")) {
+        let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+        inventory.splice(index, 1);
+        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+        loadInventory();
+    }
+}
+
+// Filter inventory by category
+function filterInventory() {
+    let category = document.getElementById("filterCategory").value.toLowerCase();
+    document.querySelectorAll("#inventoryTableBody tr").forEach(row => {
+        let categoryText = row.children[2].textContent.toLowerCase();
+        row.style.display = category === "" || categoryText === category ? "" : "none";
+    });
+}
+
+// Search inventory
+function searchInventory() {
+    let searchTerm = document.getElementById("searchMedicine").value.toLowerCase();
+    document.querySelectorAll("#inventoryTableBody tr").forEach(row => {
+        let medicineName = row.children[0].textContent.toLowerCase();
+        row.style.display = medicineName.includes(searchTerm) ? "" : "none";
+    });
+}
+
+// Export inventory to CSV
+function exportTableToCSV() {
+    let table = document.getElementById("medicineInventoryTable");
+    let rows = Array.from(table.querySelectorAll("tr")).map(row =>
+        Array.from(row.cells).map(cell => cell.textContent).join(",")
+    ).join("\n");
+
+    let csvContent = "data:text/csv;charset=utf-8," + rows;
+    let encodedUri = encodeURI(csvContent);
+    let link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "medicine_inventory.csv");
+    link.click();
 }
