@@ -1,16 +1,19 @@
-document.addEventListener("DOMContentLoaded", loadInventory);
+document.addEventListener("DOMContentLoaded", function () {
+    loadInventory();
+});
 
 function addStockRow() {
     let table = document.getElementById("stockTable").getElementsByTagName("tbody")[0];
     let row = table.insertRow();
     row.innerHTML = `
         <td><input type="text" class="form-control medicine"><span class="error-text">Enter medicine name.</span></td>
-        <td><input type="text" class="form-control brand-name"><span class="error-text">Enter brand name.</span></td>
+        <td><input type="text" class="form-control brand"><span class="error-text">Enter brand name.</span></td>
         <td>
             <input type="number" class="form-control quantity" min="1" step="1" oninput="validateQuantity(this)">
             <span class="error-text">Quantity must be a whole number (at least 1).</span>
         </td>
         <td><input type="date" class="form-control expiration"><span class="error-text">Select an expiration date.</span></td>
+        <td><input type="date" class="form-control dateDelivered"><span class="error-text">Select date delivered.</span></td>
         <td>
             <select class="form-control category" onchange="toggleInput(this, 'category')">
                 <option value="">Select Category</option>
@@ -42,7 +45,7 @@ function confirmDelete(button) {
 function validateQuantity(input) {
     let value = input.value;
     if (value.includes(".") || value.includes(",")) {
-        input.value = Math.floor(value);
+        input.value = Math.floor(value); // Remove decimal
     }
 }
 
@@ -59,7 +62,8 @@ function confirmSave() {
 function validateStockInputs() {
     let isValid = true;
     document.querySelectorAll("#stockTable tbody tr").forEach(row => {
-        row.querySelectorAll("input, select").forEach(input => {
+        let inputs = row.querySelectorAll("input, select");
+        inputs.forEach(input => {
             let errorMsg = input.nextElementSibling;
             if (!input.value.trim() || (input.type === "number" && input.value <= 0)) {
                 input.classList.add("error");
@@ -79,14 +83,15 @@ function saveStock() {
     let recentTable = document.getElementById("recentStocksTable").getElementsByTagName("tbody")[0];
     table.querySelectorAll("tr").forEach(row => {
         let medicine = row.querySelector(".medicine").value.trim();
-        let brandName = row.querySelector(".brand-name").value.trim();
+        let brand = row.querySelector(".brand").value.trim();
         let quantity = row.querySelector(".quantity").value.trim();
         let expiration = row.querySelector(".expiration").value;
+        let dateDelivered = row.querySelector(".dateDelivered").value;
         let categoryInput = row.querySelector(".category") || row.querySelector(".category-custom");
         let category = categoryInput ? categoryInput.value.trim() : "";
 
         let newRow = recentTable.insertRow();
-        newRow.innerHTML = `<td>${medicine}</td><td>${brandName}</td><td>${quantity}</td><td>${expiration}</td><td>${category}</td>`;
+        newRow.innerHTML = `<td>${medicine}</td><td>${brand}</td><td>${quantity}</td><td>${expiration}</td><td>${dateDelivered}</td><td>${category}</td>`;
         row.remove();
     });
     alert("Stock added successfully!");
