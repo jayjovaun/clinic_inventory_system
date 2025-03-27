@@ -321,3 +321,33 @@ function loadRecentStocks() {
         tableBody.innerHTML += row;
     });
 }
+
+// Export to CSV function
+function exportToCSV() {
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    
+    if (inventory.length === 0) {
+        alert("No data to export!");
+        return;
+    }
+
+    // CSV header
+    let csv = "Medicine,Brand,Category,Quantity,Expiration Date,Delivery Date\n";
+    
+    // Add each row
+    inventory.forEach(item => {
+        csv += `"${item.medicine}","${item.brand}","${item.category}",${item.quantity},"${item.expirationDate}","${item.dateDelivered}"\n`;
+    });
+
+    // Create download link
+    let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "medicine_inventory.csv");
+    link.style.visibility = "hidden";
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
