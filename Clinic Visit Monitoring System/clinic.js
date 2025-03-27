@@ -14,28 +14,30 @@ function highlightActivePage() {
     });
 }
 
-// Load inventory from local storage
-function loadInventory() {
-    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-    let tableBody = document.querySelector("#inventoryTableBody");
-    tableBody.innerHTML = "";
+// Add a new row for stock entry in index.html
+function addStockRow() {
+    let tableBody = document.querySelector("#stockTable tbody");
+    let row = document.createElement("tr");
 
-    inventory.forEach((item, index) => {
-        let row = document.createElement("tr");
-        row.innerHTML = `
-            <td>${item.medicine}</td>
-            <td>${item.brand}</td>
-            <td>${item.category}</td>
-            <td>${item.quantity}</td>
-            <td>${item.expirationDate}</td>
-            <td>${item.dateDelivered}</td>
-            <td>
-                <button class="btn btn-warning btn-sm" onclick="updateStock(${index})">✏ Update</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteStock(${index})">🗑 Delete</button>
-            </td>
-        `;
-        tableBody.appendChild(row);
-    });
+    row.innerHTML = `
+        <td><input type="text" class="form-control medicine-name" placeholder="Enter medicine"></td>
+        <td><input type="text" class="form-control brand-name" placeholder="Enter brand name"></td>
+        <td><input type="number" class="form-control quantity" min="1" placeholder="Enter quantity" oninput="validateQuantity(this)"></td>
+        <td><input type="date" class="form-control expiration-date"></td>
+        <td><input type="date" class="form-control delivery-date"></td>
+        <td>
+            <select class="form-control category">
+                <option value="Pain Reliever">Pain Reliever</option>
+                <option value="Antibiotic">Antibiotic</option>
+                <option value="Antiseptic">Antiseptic</option>
+                <option value="Vitamin">Vitamin</option>
+                <option value="Other">Other</option>
+            </select>
+        </td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteRow(this)">🗑</button></td>
+    `;
+
+    tableBody.appendChild(row);
 }
 
 // Prevent negative or decimal values in quantity
@@ -45,65 +47,146 @@ function validateQuantity(input) {
     }
 }
 
-// Update stock - correctly mapped inputs
-function updateStock(index) {
-    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-    let item = inventory[index];
+// Delete a stock row
+function deleteRow(button) {
+    button.closest("tr").remove();
+}
 
-    let row = document.querySelectorAll("#inventoryTableBody tr")[index];
+// Validate input fields, including quantity restrictions
+function validateInputs() {
+    let isValid = true;
+    document.querySelectorAll("#stockTable tbody tr, #inventoryTableBody tr").forEach(row => {
+        row.querySelectorAll("input, select").forEach(input => {
+            let value = input.value.trim();
+            let isQuantityField = input.classList.contains("quantity");
+            let errorText = input.nextElementSibling;
+
+            if (!errorText || !errorText.classList.contains("error-text")) {
+                errorText = document.createElement("div");
+                errorText.classList.add("error-text");
+                input.parentNode.appendChild(errorText);
+            }
+
+            if (value === "" || (isQuantityField && (!/^[1-9]\d*$/.test(value)))) {
+                input.classList.add("error");
+                errorText.textContent = value === "" ? "This field is required" : "Quantity must be a whole number greater than 0";
+                errorText.style.display = "block";
+                isValid = false;
+            } else {
+                input.classList.remove("error");
+                errorText.style.display = "none";
+            }
+        });
+    });
+
+    return isValid;
+}
+
+// Save stock with validation
+function confirmSave() {
+    if (validateInputs()) {
+        if (confirm("Are you sure you want to add this?")) {
+            saveStock();
+        }
+    }
+}
+
+// Save stock and add to recent stocks
+function saveStock() {
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    let recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
+
+    document.querySelectorAll("#stockTable tbody tr").forEach(row => {
+        let medicine = row.querySelector(".medicine-name").value;
+        let brand = row.querySelector(".brand-name").value;
+        let quantity = parseInt(row.querySelector(".quantity").value);
+        let expirationDate = row.querySelector(".expiration-date").value;
+        let dateDelivered = row.querySelector(".delivery-date").value;
+        let category = row.querySelector(".category").value;
+
+        let newStock = { medicine, brand, category, quantity, expirationDate, dateDelivered };
+        inventory.push(newStock);
+        recentStocks.unshift(newStock);
+
+        row.remove();
+    });
+
+    localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+    localStorage.setItem("recentStocks", JSON.stringify(recentStocks));
+
+    loadInventory();
+    loadRecentStocks();
+}
+
+// Load and display inventory
+function loadInventory() {
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    inventory.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate));
+
+    let tableBody = document.querySelector("#inventoryTableBody");
+    tableBody.innerHTML = "";
+
+    inventory.forEach((med, index) => {
+        let row = `<tr>
+            <td>${med.medicine}</td>
+            <td>${med.brand}</td>
+            <td>${med.category}</td>
+            <td>${med.quantity}</td>
+            <td>${med.expirationDate}</td>
+            <td>${med.dateDelivered}</td>
+            <td>
+                <button class="btn btn-warning btn-sm" onclick="dispenseMedicine(${index})">➖ Dispense</button>
+                <button class="btn btn-primary btn-sm" onclick="editMedicine(${index})">✏ Update</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteMedicine(${index})">🗑 Delete</button>
+            </td>
+        </tr>`;
+        tableBody.innerHTML += row;
+    });
+}
+
+// Edit a medicine entry (Fixed Incorrect Field Mapping)
+function editMedicine(index) {
+    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    let med = inventory[index];
+
+    let row = document.querySelector(`#inventoryTableBody tr:nth-child(${index + 1})`);
     row.innerHTML = `
-        <td><input type="text" class="form-control medicine-name" value="${item.medicine}"></td>
-        <td><input type="text" class="form-control brand-name" value="${item.brand}"></td>
+        <td><input type="text" class="form-control medicine-name" value="${med.medicine}"></td>
+        <td><input type="text" class="form-control brand-name" value="${med.brand}"></td>
         <td>
             <select class="form-control category">
-                <option value="Pain Reliever" ${item.category === "Pain Reliever" ? "selected" : ""}>Pain Reliever</option>
-                <option value="Antibiotic" ${item.category === "Antibiotic" ? "selected" : ""}>Antibiotic</option>
-                <option value="Antiseptic" ${item.category === "Antiseptic" ? "selected" : ""}>Antiseptic</option>
-                <option value="Vitamin" ${item.category === "Vitamin" ? "selected" : ""}>Vitamin</option>
+                <option value="Pain Reliever" ${med.category === "Pain Reliever" ? "selected" : ""}>Pain Reliever</option>
+                <option value="Antibiotic" ${med.category === "Antibiotic" ? "selected" : ""}>Antibiotic</option>
+                <option value="Antiseptic" ${med.category === "Antiseptic" ? "selected" : ""}>Antiseptic</option>
+                <option value="Vitamin" ${med.category === "Vitamin" ? "selected" : ""}>Vitamin</option>
             </select>
         </td>
-        <td><input type="number" class="form-control quantity" min="1" value="${item.quantity}" oninput="validateQuantity(this)"></td>
-        <td><input type="date" class="form-control expiration-date" value="${item.expirationDate}"></td>
-        <td><input type="date" class="form-control delivery-date" value="${item.dateDelivered}"></td>
+        <td><input type="number" class="form-control quantity" min="1" value="${med.quantity}" oninput="validateQuantity(this)"></td>
+        <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}"></td>
+        <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}"></td>
         <td>
-            <button class="btn btn-success btn-sm" onclick="saveUpdatedStock(${index})">✔ Save</button>
-            <button class="btn btn-secondary btn-sm" onclick="cancelUpdate(${index})">✖ Cancel</button>
+            <button class="btn btn-success btn-sm" onclick="saveUpdatedMedicine(${index})">💾 Save</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadInventory()">❌ Cancel</button>
         </td>
     `;
 }
 
-// Save updated stock after editing
-function saveUpdatedStock(index) {
-    let row = document.querySelectorAll("#inventoryTableBody tr")[index];
-    let medicine = row.querySelector(".medicine-name").value;
-    let brand = row.querySelector(".brand-name").value;
-    let category = row.querySelector(".category").value;
-    let quantity = parseInt(row.querySelector(".quantity").value);
-    let expirationDate = row.querySelector(".expiration-date").value;
-    let dateDelivered = row.querySelector(".delivery-date").value;
-
-    if (!medicine || !brand || !category || !expirationDate || !dateDelivered || isNaN(quantity) || quantity < 1) {
-        alert("Please fill in all fields correctly.");
-        return;
-    }
+// Save updated medicine
+function saveUpdatedMedicine(index) {
+    if (!validateInputs()) return;
 
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-    inventory[index] = { medicine, brand, category, quantity, expirationDate, dateDelivered };
+    let row = document.querySelector(`#inventoryTableBody tr:nth-child(${index + 1})`);
+
+    inventory[index] = {
+        medicine: row.querySelector(".medicine-name").value,
+        brand: row.querySelector(".brand-name").value,
+        category: row.querySelector(".category").value,
+        quantity: parseInt(row.querySelector(".quantity").value),
+        expirationDate: row.querySelector(".expiration-date").value,
+        dateDelivered: row.querySelector(".delivery-date").value
+    };
+
     localStorage.setItem("medicineInventory", JSON.stringify(inventory));
     loadInventory();
-}
-
-// Cancel update and revert to original row
-function cancelUpdate(index) {
-    loadInventory();
-}
-
-// Delete stock with confirmation
-function deleteStock(index) {
-    if (confirm("Are you sure you want to delete this item?")) {
-        let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-        inventory.splice(index, 1);
-        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
-        loadInventory();
-    }
 }
