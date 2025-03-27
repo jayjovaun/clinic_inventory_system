@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | Clinic System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        body {
+            display: flex;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa;
+        }
+        .signup-container {
+            width: 400px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .signup-container img {
+            width: 80%;
+            max-height: 100px;
+            margin-bottom: 15px;
+        }
+        .password-wrapper {
+            position: relative;
+        }
+        .password-wrapper i {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-container">
+        <img src="images/bsu_logo.png" alt="BSU Logo" style="width: 100px;" height="auto">
+        <h3>Create an Account</h3>
+        <form id="signupForm">
+            <div class="mb-3">
+                <input type="text" class="form-control" id="newUsername" placeholder="Username" required>
+            </div>
+            <div class="mb-3 password-wrapper">
+                <input type="password" class="form-control" id="newPassword" placeholder="Password" required>
+                <i class="fas fa-eye" onclick="togglePassword('newPassword')"></i>
+            </div>
+            <p id="signupError" class="error text-danger"></p>
+            <button type="submit" class="btn btn-success w-100">Sign Up</button>
+            <p class="mt-3">Already have an account? <a href="login.html">Login</a></p>
+        </form>
+    </div>
+
+    <script>
+        function togglePassword(fieldId) {
+            let input = document.getElementById(fieldId);
+            let icon = input.nextElementSibling;
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                input.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
+        }
+
+        document.getElementById("signupForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            let username = document.getElementById("newUsername").value;
+            let password = document.getElementById("newPassword").value;
+            let signupError = document.getElementById("signupError");
+
+            if (username.length < 4) {
+                signupError.textContent = "Username must be at least 4 characters.";
+                return;
+            }
+
+            if (!/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/.test(password)) {
+                signupError.textContent = "Password must be at least 6 characters, include a number, uppercase letter, and a special character.";
+                return;
+            }
+
+            // Save credentials in localStorage (simulate user registration)
+            localStorage.setItem("clinicUsername", username);
+            localStorage.setItem("clinicPassword", password);
+
+            alert("Signup successful! Redirecting to login page...");
+            window.location.href = "login.html"; // Redirect to login page
+        });
+    </script>
+</body>
+</html>
