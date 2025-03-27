@@ -14,7 +14,7 @@ function highlightActivePage() {
     });
 }
 
-// Add a new stock entry row in index.html
+// Add a new stock row in index.html
 function addStockRow() {
     let tableBody = document.querySelector("#stockTable tbody");
     let row = document.createElement("tr");
@@ -104,7 +104,6 @@ function confirmSave() {
 // Save stock to local storage and update table
 function saveStock() {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-    let recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
 
     document.querySelectorAll("#stockTable tbody tr").forEach(row => {
         let medicine = row.querySelector(".medicine-name").value;
@@ -116,19 +115,14 @@ function saveStock() {
 
         let newStock = { medicine, brand, category, quantity, expirationDate, deliveryDate };
         inventory.push(newStock);
-        recentStocks.unshift(newStock);
-
         row.remove();
     });
 
     localStorage.setItem("medicineInventory", JSON.stringify(inventory));
-    localStorage.setItem("recentStocks", JSON.stringify(recentStocks));
-
     loadInventory();
-    loadRecentStocks();
 }
 
-// Load inventory and maintain proper column structure
+// Load inventory and maintain correct column order
 function loadInventory() {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     inventory.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate));
@@ -174,7 +168,7 @@ function deleteMedicine(index) {
     }
 }
 
-// Edit medicine entry
+// Edit medicine entry (Keeping Correct Column Order)
 function editMedicine(index) {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     let med = inventory[index];
