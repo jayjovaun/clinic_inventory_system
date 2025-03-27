@@ -150,27 +150,33 @@ function saveStock() {
     loadRecentStocks();
 }
 
-// Load inventory function
 function loadInventory() {
     const inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     inventory.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate));
-    
-    const tableBody = document.querySelector("#inventoryTableBody");
+
+    const tableBody = document.getElementById("inventoryTableBody");
     tableBody.innerHTML = inventory.map((med, index) => `
         <tr>
-            <td>${med.medicine}</td>
-            <td>${med.brand}</td>
-            <td>${med.category}</td>
-            <td>${med.quantity}</td>
-            <td>${med.expirationDate}</td>
-            <td>${med.dateDelivered}</td>
+            <td>${med.medicine || '-'}</td>
+            <td>${med.brand || '-'}</td>
+            <td>${med.category || '-'}</td>
+            <td>${med.quantity || '0'}</td>
+            <td>${formatDate(med.expirationDate) || '-'}</td>
+            <td>${formatDate(med.dateDelivered) || '-'}</td>
             <td>
-                <button class="btn btn-warning btn-sm" onclick="dispenseMedicine(${index})">➖ Dispense</button>
-                <button class="btn btn-primary btn-sm" onclick="editMedicine(${index})">✏ Update</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteMedicine(${index})">🗑 Delete</button>
+                <button class="btn btn-warning btn-sm" onclick="dispenseMedicine(${index})">➖</button>
+                <button class="btn btn-primary btn-sm" onclick="editMedicine(${index})">✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteMedicine(${index})">🗑️</button>
             </td>
         </tr>
     `).join("");
+}
+
+// Add this helper function to format dates
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB'); // dd/mm/yyyy format
 }
 
 // Dispense medicine
