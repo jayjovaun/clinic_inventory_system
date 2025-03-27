@@ -67,6 +67,9 @@ function validateCategoryInput(input) {
 function validateQuantity(input) {
     if (input.value < 1 || !Number.isInteger(Number(input.value))) {
         input.value = "";
+        showError(input, "Quantity must be a whole number greater than 0");
+    } else {
+        clearError(input);
     }
 }
 
@@ -106,22 +109,27 @@ function validateInputs() {
 
 // Show validation error
 function showError(input, message) {
-    input.classList.add("error");
-
-    let errorText = input.nextElementSibling;
-    if (!errorText || !errorText.classList.contains("error-text")) {
-        errorText = document.createElement("div");
-        errorText.classList.add("error-text");
-        errorText.textContent = message;
-        input.parentNode.appendChild(errorText);
-    }
+    // Remove any existing error first
+    clearError(input);
+    
+    // Add error class to input
+    input.classList.add("is-invalid");
+    
+    // Create error message element
+    let errorText = document.createElement("div");
+    errorText.classList.add("invalid-feedback");
+    errorText.textContent = message;
+    
+    // Insert after the input
+    input.parentNode.appendChild(errorText);
 }
 
 // Clear validation error
 function clearError(input) {
-    input.classList.remove("error");
-    if (input.nextElementSibling && input.nextElementSibling.classList.contains("error-text")) {
-        input.nextElementSibling.remove();
+    input.classList.remove("is-invalid");
+    let errorText = input.nextElementSibling;
+    if (errorText && errorText.classList.contains("invalid-feedback")) {
+        errorText.remove();
     }
 }
 
@@ -218,29 +226,78 @@ function editMedicine(index) {
     `;
 }
 
-// Save updated medicine function
+// Save updated medicine function with validation
 function saveUpdatedMedicine(index) {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     let row = document.querySelector(`#inventoryTableBody tr:nth-child(${index + 1})`);
     
-    let updatedMedicine = {
-        medicine: row.querySelector(".medicine-name").value.trim(),
-        brand: row.querySelector(".brand-name").value.trim(),
-        category: row.querySelector(".category").value.trim(),
-        quantity: parseInt(row.querySelector(".quantity").value),
-        expirationDate: row.querySelector(".expiration-date").value,
-        dateDelivered: row.querySelector(".delivery-date").value
+    // Clear any existing errors first
+    row.querySelectorAll("input").forEach(input => clearError(input));
+    
+    // Get all values
+    let inputs = {
+        medicine: row.querySelector(".medicine-name"),
+        brand: row.querySelector(".brand-name"),
+        category: row.querySelector(".category"),
+        quantity: row.querySelector(".quantity"),
+        expirationDate: row.querySelector(".expiration-date"),
+        dateDelivered: row.querySelector(".delivery-date")
     };
-
-    // Validate inputs
-    if (!updatedMedicine.medicine || !updatedMedicine.brand || !updatedMedicine.category || 
-        isNaN(updatedMedicine.quantity) || updatedMedicine.quantity < 1 || 
-        !updatedMedicine.expirationDate || !updatedMedicine.dateDelivered) {
-        alert("Please fill in all fields with valid values");
+    
+    // Validate each field
+    let isValid = true;
+    
+    // Validate medicine name
+    if (!inputs.medicine.value.trim()) {
+        showError(inputs.medicine, "Medicine name is required");
+        isValid = false;
+    }
+    
+    // Validate brand name
+    if (!inputs.brand.value.trim()) {
+        showError(inputs.brand, "Brand name is required");
+        isValid = false;
+    }
+    
+    // Validate category
+    if (!inputs.category.value.trim()) {
+        showError(inputs.category, "Category is required");
+        isValid = false;
+    }
+    
+    // Validate quantity
+    if (!inputs.quantity.value || isNaN(inputs.quantity.value) || parseInt(inputs.quantity.value) < 1) {
+        showError(inputs.quantity, "Valid quantity is required (minimum 1)");
+        isValid = false;
+    }
+    
+    // Validate expiration date
+    if (!inputs.expirationDate.value) {
+        showError(inputs.expirationDate, "Expiration date is required");
+        isValid = false;
+    }
+    
+    // Validate delivery date
+    if (!inputs.dateDelivered.value) {
+        showError(inputs.dateDelivered, "Delivery date is required");
+        isValid = false;
+    }
+    
+    // If validation failed, stop here
+    if (!isValid) {
         return;
     }
+    
+    // If all valid, update the inventory
+    let updatedMedicine = {
+        medicine: inputs.medicine.value.trim(),
+        brand: inputs.brand.value.trim(),
+        category: inputs.category.value.trim(),
+        quantity: parseInt(inputs.quantity.value),
+        expirationDate: inputs.expirationDate.value,
+        dateDelivered: inputs.dateDelivered.value
+    };
 
-    // Update the inventory
     inventory[index] = updatedMedicine;
     localStorage.setItem("medicineInventory", JSON.stringify(inventory));
     loadInventory();
