@@ -62,14 +62,12 @@ function validateInputs() {
             let isQuantityField = input.classList.contains("quantity");
             let errorText = input.nextElementSibling;
 
-            // Create error text if it doesn't exist
             if (!errorText || !errorText.classList.contains("error-text")) {
                 errorText = document.createElement("div");
                 errorText.classList.add("error-text");
                 input.parentNode.appendChild(errorText);
             }
 
-            // Validation
             if (value === "") {
                 input.classList.add("error");
                 errorText.textContent = "This field is required";
@@ -120,7 +118,7 @@ function saveStock() {
 
         let newStock = { medicine, brand, category, quantity, expirationDate, dateDelivered };
         inventory.push(newStock);
-        recentStocks.unshift(newStock); // Add to the top
+        recentStocks.unshift(newStock);
 
         row.remove();
     });
@@ -135,21 +133,22 @@ function saveStock() {
 // Load and display inventory (sorted by expiration date)
 function loadInventory() {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-    inventory.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate)); // Sort by expiry
+    inventory.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate));
 
     let tableBody = document.querySelector("#inventoryTableBody");
     tableBody.innerHTML = "";
 
     inventory.forEach((med, index) => {
         let row = `<tr>
-            <td>${med.medicine}</td>
-            <td>${med.brand}</td>
-            <td>${med.category}</td>
-            <td>${med.quantity}</td>
-            <td>${med.expirationDate}</td>
-            <td>${med.dateDelivered}</td>
+            <td contenteditable="false">${med.medicine}</td>
+            <td contenteditable="false">${med.brand}</td>
+            <td contenteditable="false">${med.category}</td>
+            <td contenteditable="false">${med.quantity}</td>
+            <td contenteditable="false">${med.expirationDate}</td>
+            <td contenteditable="false">${med.dateDelivered}</td>
             <td>
                 <button class="btn btn-warning btn-sm" onclick="dispenseMedicine(${index})">➖ Dispense</button>
+                <button class="btn btn-primary btn-sm" onclick="updateMedicine(this, ${index})">✏ Update</button>
                 <button class="btn btn-danger btn-sm" onclick="deleteMedicine(${index})">🗑 Delete</button>
             </td>
         </tr>`;
@@ -157,29 +156,43 @@ function loadInventory() {
     });
 }
 
-// Load recently added stocks
-function loadRecentStocks() {
-    let recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
-    let tableBody = document.querySelector("#recentStocksTable tbody");
-    tableBody.innerHTML = "";
+// Update medicine details
+function updateMedicine(button, index) {
+    let row = button.closest("tr");
+    let isEditing = row.getAttribute("data-editing") === "true";
 
-    recentStocks.forEach(med => {
-        let row = `<tr>
-            <td>${med.medicine}</td>
-            <td>${med.brand}</td>
-            <td>${med.category}</td>
-            <td>${med.quantity}</td>
-            <td>${med.expirationDate}</td>
-            <td>${med.dateDelivered}</td>
-        </tr>`;
-        tableBody.innerHTML += row;
-    });
+    if (isEditing) {
+        let updatedData = {
+            medicine: row.children[0].textContent.trim(),
+            brand: row.children[1].textContent.trim(),
+            category: row.children[2].textContent.trim(),
+            quantity: parseInt(row.children[3].textContent.trim()),
+            expirationDate: row.children[4].textContent.trim(),
+            dateDelivered: row.children[5].textContent.trim()
+        };
+
+        if (!updatedData.medicine || !updatedData.brand || !updatedData.category || !updatedData.expirationDate || !updatedData.dateDelivered || isNaN(updatedData.quantity) || updatedData.quantity <= 0) {
+            alert("Please enter valid details.");
+            return;
+        }
+
+        let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+        inventory[index] = updatedData;
+        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+        loadInventory();
+    } else {
+        for (let i = 0; i < row.children.length - 1; i++) {
+            row.children[i].contentEditable = true;
+        }
+        button.textContent = "✔ Save";
+        row.setAttribute("data-editing", "true");
+    }
 }
 
 // Dispense medicine (reduce quantity)
 function dispenseMedicine(index) {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-    
+
     if (inventory[index].quantity > 0) {
         inventory[index].quantity--;
 
@@ -204,22 +217,4 @@ function deleteMedicine(index) {
         localStorage.setItem("medicineInventory", JSON.stringify(inventory));
         loadInventory();
     }
-}
-
-// Filter inventory by category
-function filterInventory() {
-    let category = document.getElementById("filterCategory").value.toLowerCase();
-    document.querySelectorAll("#inventoryTableBody tr").forEach(row => {
-        let categoryText = row.children[2].textContent.toLowerCase();
-        row.style.display = category === "" || categoryText === category ? "" : "none";
-    });
-}
-
-// Search inventory
-function searchInventory() {
-    let searchTerm = document.getElementById("searchMedicine").value.toLowerCase();
-    document.querySelectorAll("#inventoryTableBody tr").forEach(row => {
-        let medicineName = row.children[0].textContent.toLowerCase();
-        row.style.display = medicineName.includes(searchTerm) ? "" : "none";
-    });
 }
