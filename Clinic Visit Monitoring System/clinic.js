@@ -22,7 +22,7 @@ function addStockRow() {
     row.innerHTML = `
         <td><input type="text" class="form-control medicine-name" placeholder="Enter medicine"></td>
         <td><input type="text" class="form-control brand-name" placeholder="Enter brand name"></td>
-        <td><input type="number" class="form-control quantity" placeholder="Enter quantity"></td>
+        <td><input type="number" class="form-control quantity" min="1" placeholder="Enter quantity" oninput="validateQuantity(this)"></td>
         <td><input type="date" class="form-control expiration-date"></td>
         <td><input type="date" class="form-control delivery-date"></td>
         <td>
@@ -40,12 +40,19 @@ function addStockRow() {
     tableBody.appendChild(row);
 }
 
+// Prevent negative or decimal values in quantity
+function validateQuantity(input) {
+    if (input.value < 1 || !Number.isInteger(Number(input.value))) {
+        input.value = "";
+    }
+}
+
 // Delete a stock row
 function deleteRow(button) {
     button.closest("tr").remove();
 }
 
-// Validate input fields with quantity restriction
+// Validate input fields, including quantity restrictions
 function validateInputs() {
     let isValid = true;
     document.querySelectorAll("#stockTable tbody tr, #inventoryTableBody tr").forEach(row => {
@@ -146,7 +153,7 @@ function editMedicine(index) {
     row.innerHTML = `
         <td><input type="text" class="form-control medicine-name" value="${med.medicine}"></td>
         <td><input type="text" class="form-control brand-name" value="${med.brand}"></td>
-        <td><input type="number" class="form-control quantity" value="${med.quantity}"></td>
+        <td><input type="number" class="form-control quantity" min="1" value="${med.quantity}" oninput="validateQuantity(this)"></td>
         <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}"></td>
         <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}"></td>
         <td>
