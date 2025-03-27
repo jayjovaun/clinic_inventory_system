@@ -48,7 +48,7 @@ function deleteRow(button) {
     button.closest("tr").remove();
 }
 
-// Validate input fields
+// Validate input fields, ensuring quantity is a positive whole number
 function validateInputs() {
     let isValid = true;
 
@@ -56,19 +56,24 @@ function validateInputs() {
         row.querySelectorAll("input, select").forEach(input => {
             let value = input.value.trim();
             let isQuantityField = input.classList.contains("quantity");
-            let errorText = input.nextElementSibling;
+            let errorText = input.nextElementSibling; // Get existing error text
 
-            // Ensure error text element exists
+            // Create error text if not exists
             if (!errorText || !errorText.classList.contains("error-text")) {
                 errorText = document.createElement("div");
                 errorText.classList.add("error-text");
                 input.parentNode.appendChild(errorText);
             }
 
-            // Check if field is empty or if quantity is invalid
-            if (value === "" || (isQuantityField && (!/^\d+$/.test(value) || +value <= 0))) {
+            // Validate: Empty fields or invalid quantity
+            if (value === "") {
                 input.classList.add("error");
-                errorText.textContent = value === "" ? "This field is required" : "Quantity must be a whole number greater than 0";
+                errorText.textContent = "This field is required";
+                errorText.style.display = "block";
+                isValid = false;
+            } else if (isQuantityField && (!/^\d+$/.test(value) || parseInt(value) <= 0)) {
+                input.classList.add("error");
+                errorText.textContent = "Quantity must be a whole number greater than 0";
                 errorText.style.display = "block";
                 isValid = false;
             } else {
@@ -80,6 +85,7 @@ function validateInputs() {
 
     return isValid;
 }
+
 
 // Save stock data
 function confirmSave() {
