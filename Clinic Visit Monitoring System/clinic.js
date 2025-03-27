@@ -52,7 +52,7 @@ function deleteRow(button) {
     button.closest("tr").remove();
 }
 
-// Validate input fields, including quantity restrictions
+// Validate input fields
 function validateInputs() {
     let isValid = true;
     document.querySelectorAll("#stockTable tbody tr, #inventoryTableBody tr").forEach(row => {
@@ -144,7 +144,29 @@ function loadInventory() {
     });
 }
 
-// Edit a medicine entry (Fixed Incorrect Field Mapping)
+// Dispense a medicine (Remove from Inventory)
+function dispenseMedicine(index) {
+    if (confirm("Are you sure you want to dispense this medicine?")) {
+        let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+        inventory.splice(index, 1); // Remove medicine from inventory
+
+        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+        loadInventory(); // Refresh inventory display
+    }
+}
+
+// Delete a medicine (Remove from Inventory)
+function deleteMedicine(index) {
+    if (confirm("Are you sure you want to delete this medicine?")) {
+        let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+        inventory.splice(index, 1); // Remove medicine from inventory
+
+        localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+        loadInventory(); // Refresh inventory display
+    }
+}
+
+// Edit a medicine entry
 function editMedicine(index) {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     let med = inventory[index];
@@ -169,24 +191,4 @@ function editMedicine(index) {
             <button class="btn btn-secondary btn-sm" onclick="loadInventory()">❌ Cancel</button>
         </td>
     `;
-}
-
-// Save updated medicine
-function saveUpdatedMedicine(index) {
-    if (!validateInputs()) return;
-
-    let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-    let row = document.querySelector(`#inventoryTableBody tr:nth-child(${index + 1})`);
-
-    inventory[index] = {
-        medicine: row.querySelector(".medicine-name").value,
-        brand: row.querySelector(".brand-name").value,
-        category: row.querySelector(".category").value,
-        quantity: parseInt(row.querySelector(".quantity").value),
-        expirationDate: row.querySelector(".expiration-date").value,
-        dateDelivered: row.querySelector(".delivery-date").value
-    };
-
-    localStorage.setItem("medicineInventory", JSON.stringify(inventory));
-    loadInventory();
 }
