@@ -29,10 +29,10 @@ function addStockRow() {
                 <option value="Other">Other</option>
             </select>
         </td>
-        <td><input type="number" class="form-control quantity" min="1" required></td>
+        <td><input type="number" class="form-control quantity-input" min="1" required style="width: 70px;"></td>
         <td><input type="date" class="form-control expiration-date" required></td>
         <td><input type="date" class="form-control delivery-date" required></td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteRow(this)">🗑</button></td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteRow(this)">Delete</button></td>
     `;
     tableBody.appendChild(row);
 }
@@ -91,7 +91,7 @@ function validateAllInputs() {
     let isValid = true;
     document.querySelectorAll("#stockTable tbody tr").forEach(row => {
         row.querySelectorAll("input, select").forEach(input => {
-            if (input.classList.contains("quantity")) {
+            if (input.classList.contains("quantity-input")) {
                 isValid = validateQuantity(input) && isValid;
             } else if (input.classList.contains("category-input")) {
                 isValid = validateCategoryInput(input) && isValid;
@@ -135,7 +135,7 @@ function saveStock() {
             medicine: row.querySelector(".medicine-name").value.trim(),
             brand: row.querySelector(".brand-name").value.trim(),
             category: row.querySelector(".category, .category-input").value.trim(),
-            quantity: parseInt(row.querySelector(".quantity").value),
+            quantity: parseInt(row.querySelector(".quantity-input").value),
             expirationDate: row.querySelector(".expiration-date").value,
             dateDelivered: row.querySelector(".delivery-date").value
         };
@@ -150,10 +150,11 @@ function saveStock() {
     loadRecentStocks();
 }
 
+// Load inventory function
 function loadInventory() {
     const inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     inventory.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate));
-
+    
     const tableBody = document.getElementById("inventoryTableBody");
     tableBody.innerHTML = inventory.map((med, index) => `
         <tr>
@@ -163,20 +164,23 @@ function loadInventory() {
             <td>${med.quantity || '0'}</td>
             <td>${formatDate(med.expirationDate) || '-'}</td>
             <td>${formatDate(med.dateDelivered) || '-'}</td>
-            <td>
-                <button class="btn btn-warning btn-sm" onclick="dispenseMedicine(${index})">➖</button>
-                <button class="btn btn-primary btn-sm" onclick="editMedicine(${index})">✏️</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteMedicine(${index})">🗑️</button>
+            <td class="actions-cell">
+                <button class="btn btn-warning btn-sm dispense-btn" onclick="dispenseMedicine(${index})">Dispense</button>
+                <button class="btn btn-primary btn-sm" onclick="editMedicine(${index})">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteMedicine(${index})">Delete</button>
             </td>
         </tr>
     `).join("");
 }
 
-// Add this helper function to format dates
+// Format date as dd/mm/yyyy
 function formatDate(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB'); // dd/mm/yyyy format
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
 }
 
 // Dispense medicine
@@ -209,12 +213,12 @@ function editMedicine(index) {
         <td><input type="text" class="form-control medicine-name" value="${med.medicine}" required></td>
         <td><input type="text" class="form-control brand-name" value="${med.brand}" required></td>
         <td><input type="text" class="form-control category" value="${med.category}" required></td>
-        <td><input type="number" class="form-control quantity" min="1" value="${med.quantity}" required></td>
+        <td><input type="number" class="form-control quantity-input" value="${med.quantity}" min="1" required style="width: 70px;"></td>
         <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}" required></td>
         <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}" required></td>
-        <td>
-            <button class="btn btn-success btn-sm" onclick="saveUpdatedMedicine(${index})">💾 Save</button>
-            <button class="btn btn-secondary btn-sm" onclick="loadInventory()">❌ Cancel</button>
+        <td class="actions-cell">
+            <button class="btn btn-success btn-sm" onclick="saveUpdatedMedicine(${index})">Save</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadInventory()">Cancel</button>
         </td>
     `;
 }
@@ -226,7 +230,7 @@ function saveUpdatedMedicine(index) {
         medicine: row.querySelector(".medicine-name"),
         brand: row.querySelector(".brand-name"),
         category: row.querySelector(".category"),
-        quantity: row.querySelector(".quantity"),
+        quantity: row.querySelector(".quantity-input"),
         expirationDate: row.querySelector(".expiration-date"),
         dateDelivered: row.querySelector(".delivery-date")
     };
@@ -266,12 +270,12 @@ function loadRecentStocks() {
     const tableBody = document.querySelector("#recentStocksTable tbody");
     tableBody.innerHTML = recentStocks.slice(0, 5).map(stock => `
         <tr>
-            <td>${stock.medicine}</td>
-            <td>${stock.brand}</td>
-            <td>${stock.category}</td>
-            <td>${stock.quantity}</td>
-            <td>${stock.expirationDate}</td>
-            <td>${stock.dateDelivered}</td>
+            <td>${stock.medicine || '-'}</td>
+            <td>${stock.brand || '-'}</td>
+            <td>${stock.category || '-'}</td>
+            <td>${stock.quantity || '0'}</td>
+            <td>${formatDate(stock.expirationDate) || '-'}</td>
+            <td>${formatDate(stock.dateDelivered) || '-'}</td>
         </tr>
     `).join("");
 }
