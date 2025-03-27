@@ -1,0 +1,107 @@
+:root {
+    --primary-color: #198754;
+    --sidebar-width: 250px;
+  }
+  
+  /* Shared Form Styles */
+  .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+  }
+  
+  .btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  
+  .btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  
+  .btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+  }
+  
+  /* Login/Signup Container */
+  .auth-container {
+    width: 100%;
+    max-width: 400px;
+    background: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+  }
+  
+  .brand-logo {
+    width: 120px;
+    height: auto;
+    margin: 0 auto 1.5rem;
+    display: block;
+  }
+  
+  /* Sidebar Navigation */
+  .sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    background-color: #343a40;
+    color: white;
+    padding: 20px;
+    position: fixed;
+  }
+  
+  .sidebar a {
+    color: white;
+    text-decoration: none;
+    display: block;
+    padding: 10px 15px;
+    margin: 5px 0;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+  }
+  
+  .sidebar a:hover, .sidebar a.active {
+    background-color: #495057;
+    transform: translateX(3px);
+  }
+  
+  .main-content {
+    margin-left: calc(var(--sidebar-width) + 20px);
+    padding: 25px;
+    width: calc(100% - var(--sidebar-width) - 20px);
+  }
+  
+  /* Tables */
+  .table th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+  }
+  
+  .actions-cell {
+    min-width: 250px;
+    white-space: nowrap;
+  }
+  
+  /* Utility Classes */
+  .password-toggle {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #6c757d;
+  }
+  
+  .invalid-feedback {
+    text-align: left;
+    font-size: 0.875rem;
+  }
+  
+  .quantity-input {
+    width: 70px !important;
+    min-width: 70px !important;
+    text-align: center;
+    display: inline-block;
+    margin: 0 auto;
+  }
