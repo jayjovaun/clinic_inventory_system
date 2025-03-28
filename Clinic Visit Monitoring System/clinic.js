@@ -233,8 +233,6 @@ function loadRecentStocks() {
         `).join("");
     }
 }
-
-// Format date as dd/mm/yyyy
 function formatDate(dateString) {
     if (!dateString) return '-';
     const date = new Date(dateString);
