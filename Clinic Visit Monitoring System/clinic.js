@@ -81,7 +81,12 @@ function validateInputs() {
     let isValid = true;
     document.querySelectorAll("#stockTable tbody tr").forEach(row => {
         row.querySelectorAll("input, select").forEach(input => {
-            if (!input.value.trim()) {
+            if (input.classList.contains("category-input")) {
+                if (!input.value.trim()) {
+                    showError(input, "Category cannot be empty");
+                    isValid = false;
+                }
+            } else if (!input.value.trim()) {
                 showError(input, "This field is required");
                 isValid = false;
             } else if (input.classList.contains("quantity") && (isNaN(input.value) || parseInt(input.value) < 1)) {
@@ -133,14 +138,16 @@ function saveStock() {
         const brand = row.querySelector(".brand-name").value.trim();
         const category = row.querySelector(".category") ? 
                          row.querySelector(".category").value.trim() : 
-                         row.querySelector(".category-input").value.trim();
+                         (row.querySelector(".category-input") ? row.querySelector(".category-input").value.trim() : "");
         const quantity = parseInt(row.querySelector(".quantity").value);
         const expirationDate = row.querySelector(".expiration-date").value;
         const dateDelivered = row.querySelector(".delivery-date").value;
 
-        const newStock = { medicine, brand, category, quantity, expirationDate, dateDelivered };
-        inventory.push(newStock);
-        recentStocks.unshift(newStock);
+        if (medicine && brand && category && quantity && expirationDate && dateDelivered) {
+            const newStock = { medicine, brand, category, quantity, expirationDate, dateDelivered };
+            inventory.push(newStock);
+            recentStocks.unshift(newStock);
+        }
     });
 
     localStorage.setItem("medicineInventory", JSON.stringify(inventory));
@@ -171,6 +178,9 @@ function saveStock() {
     // Update both tables
     loadInventory();
     loadRecentStocks();
+    
+    // Show success message
+    alert("Inventory saved successfully!");
 }
 
 // Load inventory with sorting by expiration date
