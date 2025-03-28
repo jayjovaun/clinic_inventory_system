@@ -80,7 +80,21 @@ function deleteRow(button) {
 function validateInputs() {
     let isValid = true;
     document.querySelectorAll("#stockTable tbody tr").forEach(row => {
-        row.querySelectorAll("input, select").forEach(input => {
+        const inputs = [
+            row.querySelector(".medicine-name"),
+            row.querySelector(".brand-name"),
+            row.querySelector(".category, .category-input"),
+            row.querySelector(".quantity"),
+            row.querySelector(".expiration-date"),
+            row.querySelector(".delivery-date")
+        ];
+
+        inputs.forEach(input => {
+            if (!input) {
+                isValid = false;
+                return;
+            }
+
             if (!input.value.trim()) {
                 showError(input, "This field is required");
                 isValid = false;
@@ -125,15 +139,18 @@ function confirmSave() {
 
 // Save stock to localStorage
 function saveStock() {
+    if (!validateInputs()) {
+        return;
+    }
+
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     let recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
 
     document.querySelectorAll("#stockTable tbody tr").forEach(row => {
         const medicine = row.querySelector(".medicine-name").value.trim();
         const brand = row.querySelector(".brand-name").value.trim();
-        const category = row.querySelector(".category") ? 
-                         row.querySelector(".category").value.trim() : 
-                         (row.querySelector(".category-input") ? row.querySelector(".category-input").value.trim() : "");
+        const categoryElement = row.querySelector(".category") || row.querySelector(".category-input");
+        const category = categoryElement ? categoryElement.value.trim() : "";
         const quantity = parseInt(row.querySelector(".quantity").value);
         const expirationDate = row.querySelector(".expiration-date").value;
         const dateDelivered = row.querySelector(".delivery-date").value;
@@ -145,7 +162,7 @@ function saveStock() {
                 category, 
                 quantity, 
                 expirationDate, 
-                dateDelivered: dateDelivered  // Changed to match what loadRecentStocks() expects
+                dateDelivered 
             };
             inventory.push(newStock);
             recentStocks.unshift(newStock);
