@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
     highlightActivePage();
     loadInventory();
     loadRecentStocks();
+    loadDispensedMedicines();
     
     // Initialize search functionality for reports page
     if (document.getElementById('searchMedicine')) {
@@ -253,6 +254,24 @@ function loadRecentStocks() {
     }
 }
 
+// Load dispensed medicines
+function loadDispensedMedicines() {
+    const dispensedMedicines = JSON.parse(localStorage.getItem("dispensedMedicines")) || [];
+    const tableBody = document.getElementById("dispensedTableBody");
+    if (tableBody) {
+        tableBody.innerHTML = dispensedMedicines.map(med => `
+            <tr>
+                <td>${med.medicine || '-'}</td>
+                <td>${med.brand || '-'}</td>
+                <td>${med.category || '-'}</td>
+                <td class="text-center">${med.quantity || '0'}</td>
+                <td class="text-center">${formatDate(med.dateDispensed)}</td>
+                <td class="text-center">${formatDate(med.expirationDate)}</td>
+            </tr>
+        `).join("");
+    }
+}
+
 // Format date as dd/mm/yyyy
 function formatDate(dateString) {
     if (!dateString) return '-';
@@ -285,13 +304,57 @@ function filterInventory() {
     });
 }
 
-// Dispense medicine
+// Dispense medicine - updated to track dispensed items
 function dispenseMedicine(index) {
-    if (confirm("Are you sure you want to dispense this medicine?")) {
-        const inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
-        inventory.splice(index, 1);
+    const inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    const medicine = inventory[index];
+    
+    const quantity = prompt(`How many units of ${medicine.medicine} (${medicine.brand}) would you like to dispense? Current quantity: ${medicine.quantity}`);
+    
+    if (quantity === null) return; // User cancelled
+    
+    const quantityNum = parseInt(quantity);
+    if (isNaN(quantityNum)) {
+        alert("Please enter a valid number");
+        return;
+    }
+    
+    if (quantityNum <= 0) {
+        alert("Quantity must be greater than 0");
+        return;
+    }
+    
+    if (quantityNum > medicine.quantity) {
+        alert(`Cannot dispense more than available quantity (${medicine.quantity})`);
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to dispense ${quantityNum} units of ${medicine.medicine} (${medicine.brand})?`)) {
+        // Update inventory
+        if (quantityNum === medicine.quantity) {
+            inventory.splice(index, 1);
+        } else {
+            inventory[index].quantity -= quantityNum;
+        }
         localStorage.setItem("medicineInventory", JSON.stringify(inventory));
+        
+        // Add to dispensed medicines
+        const dispensedMedicines = JSON.parse(localStorage.getItem("dispensedMedicines")) || [];
+        dispensedMedicines.push({
+            medicine: medicine.medicine,
+            brand: medicine.brand,
+            category: medicine.category,
+            quantity: quantityNum,
+            dateDispensed: new Date().toISOString().split('T')[0],
+            expirationDate: medicine.expirationDate
+        });
+        localStorage.setItem("dispensedMedicines", JSON.stringify(dispensedMedicines));
+        
+        // Reload tables
         loadInventory();
+        loadDispensedMedicines();
+        
+        alert(`${quantityNum} units of ${medicine.medicine} dispensed successfully!`);
     }
 }
 
@@ -391,6 +454,35 @@ function exportToCSV() {
     const link = document.createElement("a");
     link.href = url;
     link.download = `medicine_inventory_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// Export dispensed medicines to CSV
+function exportDispensedToCSV() {
+    const dispensedMedicines = JSON.parse(localStorage.getItem("dispensedMedicines")) || [];
+    if (!dispensedMedicines.length) return alert("No dispensed medicines to export!");
+
+    const headers = ["Medicine", "Brand", "Category", "Quantity Dispensed", "Date Dispensed", "Expiration Date"];
+    const csvContent = [
+        headers.join(","),
+        ...dispensedMedicines.map(item => [
+            `"${item.medicine}"`,
+            `"${item.brand}"`,
+            `"${item.category}"`,
+            item.quantity,
+            `"${formatDate(item.dateDispensed)}"`,
+            `"${formatDate(item.expirationDate)}"`
+        ].join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `dispensed_medicines_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
