@@ -3,86 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clinic Inventory Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <title>Clinic Inventory</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { display: flex; }
-        .sidebar {
-            width: 250px; height: 100vh; background-color: #343a40;
-            color: white; padding: 20px; position: fixed; text-align: center;
+        body { 
+            display: flex;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .sidebar a { color: white; text-decoration: none; display: block; padding: 10px; margin: 5px 0; }
-        .sidebar a:hover { background-color: #495057; border-radius: 5px; }
-        .main-content { margin-left: 270px; padding: 20px; width: 100%; }
-        .error { border: 2px solid red; }
-        .error-text { color: red; font-size: 12px; display: none; }
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background-color: #343a40;
+            color: white;
+            padding: 20px;
+            position: fixed;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background-color: #495057;
+            transform: translateX(3px);
+        }
+        .main-content {
+            margin-left: 270px;
+            padding: 25px;
+            width: calc(100% - 270px);
+        }
+        .card {
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: none;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            padding: 15px 20px;
+        }
+        .table {
+            margin-bottom: 0;
+        }
+        .table th {
+            font-weight: 600;
+            background-color: #f8f9fa;
+            vertical-align: middle;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .actions-cell {
+            min-width: 120px;
+            white-space: nowrap;
+        }
+        .btn-group-sm > .btn {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            margin: 0 2px;
+        }
+        .form-control, .form-select {
+            min-width: 120px;
+        }
+        .text-center {
+            text-align: center !important;
+        }
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+        .invalid-feedback {
+            color: #dc3545;
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+        /* Notification styles */
+        #notificationBadge {
+            width: 10px;
+            height: 10px;
+            font-size: 0;
+        }
+        .expired-notification {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border-left: 3px solid #dc3545;
+            padding: 8px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+        }
+        .near-expiry-notification {
+            color: #ff9800;
+            background-color: #fff3e0;
+            border-left: 3px solid #ff9800;
+            padding: 8px;
+            margin-bottom: 4px;
+            border-radius: 4px;
+        }
+        .dropdown-menu {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        /* Align form elements consistently */
+        .table input[type="text"],
+        .table input[type="number"],
+        .table input[type="date"],
+        .table select {
+            width: 100%;
+            padding: 0.375rem 0.75rem;
+        }
+        /* Make action buttons centered */
+        .table .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
-
-    <!-- Sidebar -->
     <div class="sidebar">
-        <h3>Clinic Inventory</h3>
-        <a href="index.html">Dashboard</a>
-        <a href="inventory.html">Manage Inventory</a>
-        <a href="reports.html">Reports</a>
+        <img src="images/bsu_logo.png" alt="BSU Logo" height="100" class="mb-3">
+        <h3 class="mb-4">Clinic Inventory</h3>
+        <a href="index.html" class="active">Stock Entry</a>
+        <a href="reports.html">Inventory</a>
         <a href="logout.html" class="text-danger">Logout</a>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
-        <h1>Clinic Inventory Dashboard</h1>
-
-        <!-- Stock Table -->
-        <div class="card mt-4">
-            <div class="card-header d-flex justify-content-between">
-                <h4>Stock Inventory</h4>
-                <button class="btn btn-sm btn-primary" onclick="addStockRow()">➕ Add</button>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="mb-1">Medicine Stock Entry</h1>
+                <p class="text-muted">Add new stock to the inventory</p>
             </div>
-            <div class="card-body">
-                <table class="table table-bordered" id="stockTable">
-                    <thead>
-                        <tr>
-                            <th>Medicine</th>
-                            <th>Brand Name</th>  <!-- Updated from "Milligram" to "Brand Name" -->
-                            <th>Quantity</th>
-                            <th>Expiration Date</th>
-                            <th>Category</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-                <button class="btn btn-sm btn-primary mt-3" onclick="confirmSave()">💾 Save</button>
+            <div class="dropdown">
+                <button class="btn btn-light position-relative" type="button" id="notificationDropdown" 
+                        data-bs-toggle="dropdown" aria-expanded="false" onclick="updateNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span id="notificationBadge" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle d-none">
+                        <span class="visually-hidden">New alerts</span>
+                    </span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end p-2" aria-labelledby="notificationDropdown" style="min-width: 300px;">
+                    <li><h6 class="dropdown-header">Expiration Warnings</h6></li>
+                    <div id="notificationContent">
+                        <li class="px-3 py-2 text-muted">No expiration warnings</li>
+                    </div>
+                </ul>
             </div>
         </div>
 
-        <!-- Recently Added Stocks -->
-        <div class="card mt-4">
-            <div class="card-header">
-                <h4>Recently Added Stocks</h4>
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Add New Stock</h4>
+                <div>
+                    <button class="btn btn-primary btn-sm me-2" onclick="addStockRow()">
+                        <i class="fas fa-plus me-1"></i> Add Row
+                    </button>
+                    <button class="btn btn-success btn-sm" onclick="confirmSave()">
+                        <i class="fas fa-save me-1"></i> Save
+                    </button>
+                </div>
             </div>
             <div class="card-body">
-                <table class="table table-bordered" id="recentStocksTable">
-                    <thead>
-                        <tr>
-                            <th>Medicine</th>
-                            <th>Brand Name</th>  <!-- Updated from "Milligram" to "Brand Name" -->
-                            <th>Quantity</th>
-                            <th>Expiration Date</th>
-                            <th>Category</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="stockTable">
+                        <thead>
+                            <tr>
+                                <th width="20%">Medicine Name</th>
+                                <th width="15%">Brand</th>
+                                <th width="15%">Category</th>
+                                <th width="10%">Quantity</th>
+                                <th width="15%">Expiration Date</th>
+                                <th width="15%">Delivery Date</th>
+                                <th width="10%" class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><input type="text" class="form-control medicine-name" required></td>
+                                <td><input type="text" class="form-control brand-name" required></td>
+                                <td>
+                                    <select class="form-select category" onchange="handleCategoryChange(this)" required>
+                                        <option value="">Select Category</option>
+                                        <option value="Pain Reliever">Pain Reliever</option>
+                                        <option value="Antibiotic">Antibiotic</option>
+                                        <option value="Antiseptic">Antiseptic</option>
+                                        <option value="Vitamin">Vitamin</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </td>
+                                <td><input type="number" class="form-control quantity text-center" min="1" required oninput="validateQuantity(this)"></td>
+                                <td><input type="date" class="form-control expiration-date" required></td>
+                                <td><input type="date" class="form-control delivery-date" required></td>
+                                <td class="text-center"><button class="btn btn-danger btn-sm" onclick="deleteRow(this)"><i class="fas fa-trash-alt"></i></button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Recently Added Stocks</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="recentStocksTable">
+                        <thead>
+                            <tr>
+                                <th width="20%">Medicine</th>
+                                <th width="15%">Brand</th>
+                                <th width="10%" class="text-center">Quantity</th>
+                                <th width="15%" class="text-center">Expiration</th>
+                                <th width="15%" class="text-center">Delivered</th>
+                                <th width="15%">Category</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="clinic.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

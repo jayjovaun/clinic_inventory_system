@@ -4,98 +4,172 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up | Clinic System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #343a40;
+            --accent-color: #198754;
+        }
+        
         body {
-            display: flex;
-            height: 100vh;
-            justify-content: center;
-            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
+            display: flex;
+            min-height: 100vh;
         }
+        
         .signup-container {
-            width: 400px;
+            width: 100%;
+            max-width: 400px;
+            margin: auto;
             background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
+            padding: 2.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
         }
-        .signup-container img {
-            width: 80%;
-            max-height: 100px;
-            margin-bottom: 15px;
+        
+        .brand-logo {
+            width: 120px;
+            height: auto;
+            margin: 0 auto 1.5rem;
+            display: block;
         }
-        .password-wrapper {
-            position: relative;
+        
+        .form-control {
+            padding: 0.75rem;
+            border-radius: 0.375rem;
         }
-        .password-wrapper i {
+        
+        .btn-success {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            padding: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .password-toggle {
             position: absolute;
-            right: 10px;
+            right: 1rem;
             top: 50%;
             transform: translateY(-50%);
             cursor: pointer;
+            color: #6c757d;
+        }
+        
+        .invalid-feedback {
+            text-align: left;
+            font-size: 0.875rem;
+        }
+        
+        .alert-danger {
+            font-size: 0.875rem;
         }
     </style>
 </head>
 <body>
     <div class="signup-container">
-        <img src="images/bsu_logo.png" alt="BSU Logo" style="width: 100px;" height="auto">
-        <h3>Create an Account</h3>
-        <form id="signupForm">
+        <img src="images/bsu_logo.png" alt="BSU Logo" class="brand-logo">
+        <h3 class="text-center mb-4">Create an Account</h3>
+        <form id="signupForm" novalidate>
             <div class="mb-3">
-                <input type="text" class="form-control" id="newUsername" placeholder="Username" required>
+                <input type="text" 
+                       class="form-control" 
+                       id="newUsername" 
+                       placeholder="Username"
+                       required>
+                <div class="invalid-feedback">Please enter a username</div>
             </div>
-            <div class="mb-3 password-wrapper">
-                <input type="password" class="form-control" id="newPassword" placeholder="Password" required>
-                <i class="fas fa-eye" onclick="togglePassword('newPassword')"></i>
+            
+            <div class="mb-3 position-relative">
+                <input type="password" 
+                       class="form-control" 
+                       id="newPassword" 
+                       placeholder="Password"
+                       required>
+                <i class="password-toggle fas fa-eye" onclick="togglePassword('newPassword')"></i>
+                <div class="invalid-feedback">Please enter a password</div>
             </div>
-            <p id="signupError" class="error text-danger"></p>
-            <button type="submit" class="btn btn-success w-100">Sign Up</button>
-            <p class="mt-3">Already have an account? <a href="login.html">Login</a></p>
+            
+            <div id="signupError" class="alert alert-danger d-none"></div>
+            
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-success">Sign Up</button>
+            </div>
+            
+            <p class="text-center mt-3 mb-0">
+                Already have an account? 
+                <a href="login.html" class="text-decoration-none">Login</a>
+            </p>
         </form>
     </div>
 
     <script>
         function togglePassword(fieldId) {
-            let input = document.getElementById(fieldId);
-            let icon = input.nextElementSibling;
+            const input = document.getElementById(fieldId);
+            const icon = input.parentNode.querySelector('.password-toggle');
             if (input.type === "password") {
                 input.type = "text";
-                icon.classList.remove("fa-eye");
-                icon.classList.add("fa-eye-slash");
+                icon.classList.replace("fa-eye", "fa-eye-slash");
             } else {
                 input.type = "password";
-                icon.classList.remove("fa-eye-slash");
-                icon.classList.add("fa-eye");
+                icon.classList.replace("fa-eye-slash", "fa-eye");
             }
         }
 
-        document.getElementById("signupForm").addEventListener("submit", function(event) {
-            event.preventDefault();
+        document.getElementById('signupForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const form = e.target;
+            const username = document.getElementById('newUsername');
+            const password = document.getElementById('newPassword');
+            const errorAlert = document.getElementById('signupError');
 
-            let username = document.getElementById("newUsername").value;
-            let password = document.getElementById("newPassword").value;
-            let signupError = document.getElementById("signupError");
+            form.classList.add('was-validated');
+            errorAlert.classList.add('d-none');
+            [username, password].forEach(field => field.classList.remove('is-invalid'));
 
-            if (username.length < 4) {
-                signupError.textContent = "Username must be at least 4 characters.";
+            let isValid = true;
+            if (!username.value.trim()) {
+                username.classList.add('is-invalid');
+                isValid = false;
+            }
+            if (!password.value.trim()) {
+                password.classList.add('is-invalid');
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            if (username.value.length < 4) {
+                errorAlert.textContent = 'Username must be at least 4 characters';
+                errorAlert.classList.remove('d-none');
+                username.classList.add('is-invalid');
                 return;
             }
 
-            if (!/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/.test(password)) {
-                signupError.textContent = "Password must be at least 6 characters, include a number, uppercase letter, and a special character.";
+            if (!/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/.test(password.value)) {
+                errorAlert.textContent = 'Password must be at least 6 characters with 1 uppercase letter, 1 number, and 1 special character';
+                errorAlert.classList.remove('d-none');
+                password.classList.add('is-invalid');
                 return;
             }
 
-            // Save credentials in localStorage (simulate user registration)
-            localStorage.setItem("clinicUsername", username);
-            localStorage.setItem("clinicPassword", password);
+            localStorage.setItem('clinicUsername', username.value);
+            localStorage.setItem('clinicPassword', password.value);
 
-            alert("Signup successful! Redirecting to login page...");
-            window.location.href = "login.html"; // Redirect to login page
+            alert('Account created successfully! Redirecting to login...');
+            window.location.href = 'login.html';
+        });
+
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('input', () => {
+                input.classList.remove('is-invalid');
+                document.getElementById('signupError').classList.add('d-none');
+            });
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
