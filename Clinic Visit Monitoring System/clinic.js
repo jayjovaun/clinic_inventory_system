@@ -1,26 +1,229 @@
+/**
+ * MEDICINE INVENTORY MANAGEMENT SYSTEM
+ * Main controller for clinic inventory operations
+ */
+
+// ==================== INITIALIZATION ====================
+
+// Runs when the DOM is fully loaded
 document.addEventListener("DOMContentLoaded", function () {
+    console.log("Initializing clinic inventory system...");
+    
+    // Initialize page components
     highlightActivePage();
     loadInventory();
     loadRecentStocks();
     loadDispensedMedicines();
-    updateNotifications()
+    updateNotifications();
     
-    // Initialize search functionality for reports page
-    if (document.getElementById('searchMedicine')) {
-        document.getElementById('searchMedicine').addEventListener('input', searchInventory);
+    // ===== SEARCH FUNCTIONALITY =====
+    const searchInput = document.getElementById('searchMedicine');
+    const searchIcon = document.getElementById('searchIcon');
+    
+    // Set up search input listener
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            searchInventory();
+            // Apply other active filters after search
+            filterInventory(); 
+        });
+    }
+    
+    // Set up search icon click listener
+    if (searchIcon) {
+        searchIcon.addEventListener('click', function() {
+            searchInventory();
+            filterInventory();
+        });
+    }
+    
+    // ===== FILTER FUNCTIONALITY =====
+    // Category filter
+    const filterCategoryBtn = document.getElementById('filterCategoryBtn');
+    if (filterCategoryBtn) {
+        filterCategoryBtn.addEventListener('click', function() {
+            document.getElementById('categoryFilterModal').style.display = 'block';
+        });
+    }
+    
+    // Expiration filter
+    const filterExpirationBtn = document.getElementById('filterExpirationBtn');
+    if (filterExpirationBtn) {
+        filterExpirationBtn.addEventListener('click', function() {
+            document.getElementById('expirationFilterModal').style.display = 'block';
+        });
+    }
+    
+    // Delivery month filter
+    const filterDeliveryBtn = document.getElementById('filterDeliveryBtn');
+    if (filterDeliveryBtn) {
+        filterDeliveryBtn.addEventListener('click', function() {
+            document.getElementById('deliveryFilterModal').style.display = 'block';
+        });
+    }
+    
+    // ===== RESET FUNCTIONALITY =====
+    const resetFilter = document.getElementById('resetFilter');
+    if (resetFilter) {
+        resetFilter.addEventListener('click', function() {
+            // Clear all filter values
+            document.getElementById('searchMedicine').value = '';
+            document.getElementById('filterCategory').value = '';
+            document.getElementById('filterExpiration').value = '';
+            document.getElementById('filterDeliveryMonth').value = '';
+            
+            // Reload full inventory
+            loadInventory();
+            
+            // Close any open filter modals
+            document.querySelectorAll('.filter-modal').forEach(modal => {
+                modal.style.display = 'none';
+            });
+            
+            console.log("All filters reset");
+        });
     }
 });
 
-// Highlight active sidebar link
+// ==================== CORE FUNCTIONS ====================
+
+/**
+ * Highlights the active page in the sidebar
+ */
 function highlightActivePage() {
     const currentPage = window.location.pathname.split("/").pop();
     document.querySelectorAll(".sidebar a").forEach(link => {
-        link.classList.toggle("active", link.getAttribute("href") === currentPage);
+        const isActive = link.getAttribute("href") === currentPage;
+        link.classList.toggle("active", isActive);
+        if (isActive) {
+            console.log(`Active page: ${currentPage}`);
+        }
     });
 }
 
-// Add a new stock entry row
+/**
+ * Searches inventory by medicine name
+ */
+function searchInventory() {
+    const searchTerm = document.getElementById('searchMedicine').value.toLowerCase();
+    console.log(`Searching for: ${searchTerm}`);
+    
+    const rows = document.querySelectorAll("#inventoryTableBody tr");
+    
+    rows.forEach(row => {
+        const medicineName = row.cells[0].textContent.toLowerCase();
+        row.style.display = medicineName.includes(searchTerm) ? "" : "none";
+    });
+}
+
+/**
+ * Applies all active filters to inventory
+ */
+function filterInventory() {
+    console.log("Applying filters...");
+    
+    const searchTerm = document.getElementById('searchMedicine').value.toLowerCase();
+    const category = document.getElementById('filterCategory').value;
+    const expirationStatus = document.getElementById('filterExpiration').value;
+    const deliveryMonth = document.getElementById('filterDeliveryMonth').value;
+    const now = new Date();
+    const warningDays = 30; // Days considered as "expiring soon"
+    
+    const rows = document.querySelectorAll("#inventoryTableBody tr");
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const medicineName = row.cells[0].textContent.toLowerCase();
+        const rowCategory = row.cells[2].textContent;
+        const expirationDateText = row.cells[4].textContent;
+        const deliveryDateText = row.cells[5].textContent;
+        
+        // Parse dates only if needed for filtering
+        const expirationDate = expirationStatus ? new Date(expirationDateText) : null;
+        const deliveryDate = deliveryMonth ? new Date(deliveryDateText) : null;
+        
+        let showRow = true;
+        
+        // Apply search filter
+        if (searchTerm && !medicineName.includes(searchTerm)) {
+            showRow = false;
+        }
+        
+        // Apply category filter
+        if (showRow && category && rowCategory !== category) {
+            showRow = false;
+        }
+        
+        // Apply expiration status filter
+        if (showRow && expirationStatus && expirationDate) {
+            const daysToExpire = Math.floor((expirationDate - now) / (1000 * 60 * 60 * 24));
+            
+            if (expirationStatus === 'Expired' && daysToExpire >= 0) {
+                showRow = false;
+            } 
+            else if (expirationStatus === 'Expiring Soon' && (daysToExpire > warningDays || daysToExpire < 0)) {
+                showRow = false;
+            } 
+            else if (expirationStatus === 'Valid' && daysToExpire <= warningDays) {
+                showRow = false;
+            }
+        }
+        
+        // Apply delivery month filter
+        if (showRow && deliveryMonth && deliveryDate) {
+            const deliveryMonthValue = deliveryDate.getMonth() + 1;
+            if (deliveryMonthValue !== parseInt(deliveryMonth)) {
+                showRow = false;
+            }
+        }
+        
+        // Update row visibility
+        row.style.display = showRow ? "" : "none";
+        if (showRow) visibleCount++;
+    });
+    
+    console.log(`Filter results: ${visibleCount} items visible`);
+}
+
+// ==================== FILTER MODAL FUNCTIONS ====================
+
+/**
+ * Applies category filter from modal
+ */
+function applyCategoryFilter() {
+    const category = document.getElementById('filterCategory').value;
+    console.log(`Applying category filter: ${category || 'All'}`);
+    document.getElementById('categoryFilterModal').style.display = 'none';
+    filterInventory();
+}
+
+/**
+ * Applies expiration filter from modal
+ */
+function applyExpirationFilter() {
+    const expiration = document.getElementById('filterExpiration').value;
+    console.log(`Applying expiration filter: ${expiration || 'All'}`);
+    document.getElementById('expirationFilterModal').style.display = 'none';
+    filterInventory();
+}
+
+/**
+ * Applies delivery month filter from modal
+ */
+function applyDeliveryFilter() {
+    const deliveryMonth = document.getElementById('filterDeliveryMonth').value;
+    console.log(`Applying delivery month filter: ${deliveryMonth || 'All'}`);
+    document.getElementById('deliveryFilterModal').style.display = 'none';
+    filterInventory();
+}
+
+// ==================== INVENTORY MANAGEMENT ====================
+
+/**
+ * Adds a new row to the stock entry table
+ */
 function addStockRow() {
+    console.log("Adding new stock row...");
     const tableBody = document.querySelector("#stockTable tbody");
     const row = document.createElement("tr");
     row.innerHTML = `
@@ -44,9 +247,12 @@ function addStockRow() {
     tableBody.appendChild(row);
 }
 
-// Handle category "Other" selection
+/**
+ * Handles category selection change (for "Other" option)
+ */
 function handleCategoryChange(select) {
     if (select.value === "Other") {
+        console.log("Custom category selected");
         const input = document.createElement("input");
         input.type = "text";
         input.className = "form-control category-input";
@@ -62,6 +268,9 @@ function handleCategoryChange(select) {
     }
 }
 
+/**
+ * Validates quantity input
+ */
 function validateQuantity(input) {
     const value = parseInt(input.value);
     if (isNaN(value) || value < 1) {
@@ -72,13 +281,19 @@ function validateQuantity(input) {
     return true;
 }
 
-// Delete stock entry row
+/**
+ * Deletes a row from the stock entry table
+ */
 function deleteRow(button) {
+    console.log("Deleting stock row...");
     button.closest("tr").remove();
 }
 
-// Validate all input fields before saving
+/**
+ * Validates all inputs in the stock entry table
+ */
 function validateInputs() {
+    console.log("Validating inputs...");
     let isValid = true;
     document.querySelectorAll("#stockTable tbody tr").forEach(row => {
         const inputs = [
@@ -110,7 +325,11 @@ function validateInputs() {
     return isValid;
 }
 
-// Show validation error
+// ==================== ERROR HANDLING ====================
+
+/**
+ * Shows an error message for an input field
+ */
 function showError(input, message) {
     clearError(input);
     input.classList.add("is-invalid");
@@ -120,7 +339,9 @@ function showError(input, message) {
     input.parentNode.appendChild(errorDiv);
 }
 
-// Clear validation error
+/**
+ * Clears error messages from an input field
+ */
 function clearError(input) {
     input.classList.remove("is-invalid");
     const errorDiv = input.nextElementSibling;
@@ -129,8 +350,13 @@ function clearError(input) {
     }
 }
 
-// Confirm save with validation
+// ==================== STOCK OPERATIONS ====================
+
+/**
+ * Confirms before saving stock entries
+ */
 function confirmSave() {
+    console.log("Confirming stock save...");
     if (validateInputs()) {
         if (confirm("Are you sure you want to save these entries?")) {
             saveStock();
@@ -138,15 +364,20 @@ function confirmSave() {
     }
 }
 
-// Save stock to localStorage
+/**
+ * Saves stock entries to localStorage
+ */
 function saveStock() {
+    console.log("Saving stock...");
     if (!validateInputs()) {
         return;
     }
 
+    // Get existing inventory
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     let recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
 
+    // Add new items from input table
     document.querySelectorAll("#stockTable tbody tr").forEach(row => {
         const medicine = row.querySelector(".medicine-name").value.trim();
         const brand = row.querySelector(".brand-name").value.trim();
@@ -167,13 +398,15 @@ function saveStock() {
             };
             inventory.push(newStock);
             recentStocks.unshift(newStock);
+            console.log(`Added new stock: ${medicine}`);
         }
     });
 
+    // Save updated data
     localStorage.setItem("medicineInventory", JSON.stringify(inventory));
     localStorage.setItem("recentStocks", JSON.stringify(recentStocks));
     
-    // Clear the input table
+    // Reset input table
     document.querySelector("#stockTable tbody").innerHTML = `
         <tr>
             <td><input type="text" class="form-control medicine-name" required></td>
@@ -195,22 +428,26 @@ function saveStock() {
         </tr>
     `;
     
-    // Update both tables
+    // Update displays
     loadInventory();
     loadRecentStocks();
+    updateNotifications();
     
-    alert("Inventory saved successfully!");
+    alert("New stock items added successfully!");
+    console.log("Stock saved successfully");
 }
-// Load inventory with sorting by expiration date
+
+// ==================== DATA LOADING ====================
+
+/**
+ * Loads inventory data into the table
+ */
 function loadInventory() {
+    console.log("Loading inventory...");
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     
-    // Sort by nearest expiration date first
-    inventory.sort((a, b) => {
-        const dateA = new Date(a.expirationDate);
-        const dateB = new Date(b.expirationDate);
-        return dateA - dateB;
-    });
+    // Sort by expiration date (soonest first)
+    inventory.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate));
 
     const tableBody = document.getElementById("inventoryTableBody");
     if (tableBody) {
@@ -222,7 +459,7 @@ function loadInventory() {
                 <td class="text-center">${med.quantity || '0'}</td>
                 <td class="text-center">${formatDate(med.expirationDate)}</td>
                 <td class="text-center">${formatDate(med.dateDelivered)}</td>
-                <td class="text-center actions-cell">
+                <td class="text-center">
                     <div class="d-flex justify-content-center gap-2">
                         <button class="btn btn-outline-warning btn-sm" onclick="dispenseMedicine(${index})">Dispense</button>
                         <button class="btn btn-outline-primary btn-sm" onclick="editMedicine(${index})">Edit</button>
@@ -231,11 +468,16 @@ function loadInventory() {
                 </td>
             </tr>
         `).join("");
+        
+        console.log(`Loaded ${inventory.length} inventory items`);
     }
 }
 
-// Load recent stocks
+/**
+ * Loads recent stock data
+ */
 function loadRecentStocks() {
+    console.log("Loading recent stocks...");
     const recentStocks = JSON.parse(localStorage.getItem("recentStocks")) || [];
     const tableBody = document.querySelector("#recentStocksTable tbody");
     if (tableBody) {
@@ -249,11 +491,16 @@ function loadRecentStocks() {
                 <td>${stock.category || '-'}</td>
             </tr>
         `).join("");
+        
+        console.log(`Loaded ${Math.min(recentStocks.length, 5)} recent stock entries`);
     }
 }
 
-// Load dispensed medicines
+/**
+ * Loads dispensed medicines data
+ */
 function loadDispensedMedicines() {
+    console.log("Loading dispensed medicines...");
     const dispensedMedicines = JSON.parse(localStorage.getItem("dispensedMedicines")) || [];
     const tableBody = document.getElementById("dispensedTableBody");
     if (tableBody) {
@@ -267,57 +514,43 @@ function loadDispensedMedicines() {
                 <td class="text-center">${formatDate(med.expirationDate)}</td>
             </tr>
         `).join("");
+        
+        console.log(`Loaded ${dispensedMedicines.length} dispensed medicine records`);
     }
 }
-// Format date to MM/DD/YYYY
+
+// ==================== UTILITY FUNCTIONS ====================
+
+/**
+ * Formats a date string as MM/DD/YYYY
+ */
 function formatDate(dateString) {
     if (!dateString) return '-';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
     const year = date.getFullYear();
     return `${month}/${day}/${year}`;
 }
 
-// Search functionality for reports page
-function searchInventory() {
-    const searchTerm = document.getElementById('searchMedicine').value.toLowerCase();
-    const rows = document.querySelectorAll("#inventoryTableBody tr");
-    
-    rows.forEach(row => {
-        const medicineName = row.cells[0].textContent.toLowerCase();
-        row.style.display = medicineName.includes(searchTerm) ? "" : "none";
-    });
-}
+// ==================== MEDICINE OPERATIONS ====================
 
-// Filter by category
-function filterInventory() {
-    const category = document.getElementById('filterCategory').value;
-    const rows = document.querySelectorAll("#inventoryTableBody tr");
-    
-    rows.forEach(row => {
-        const rowCategory = row.cells[2].textContent;
-        row.style.display = !category || rowCategory === category ? "" : "none";
-    });
-}
-
-// Dispense medicine - updated to track dispensed items
+/**
+ * Dispenses medicine from inventory
+ */
 function dispenseMedicine(index) {
     const inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     const medicine = inventory[index];
     
     const quantity = prompt(`How many units of ${medicine.medicine} (${medicine.brand}) would you like to dispense? Current quantity: ${medicine.quantity}`);
     
-    if (quantity === null) return; // User cancelled
+    if (quantity === null) return;
     
     const quantityNum = parseInt(quantity);
-    if (isNaN(quantityNum)) {
-        alert("Please enter a valid number");
-        return;
-    }
-    
-    if (quantityNum <= 0) {
-        alert("Quantity must be greater than 0");
+    if (isNaN(quantityNum) || quantityNum <= 0) {
+        alert("Please enter a valid positive number");
         return;
     }
     
@@ -326,16 +559,17 @@ function dispenseMedicine(index) {
         return;
     }
     
-    if (confirm(`Are you sure you want to dispense ${quantityNum} units of ${medicine.medicine} (${medicine.brand})?`)) {
-        // Update inventory
+    if (confirm(`Dispense ${quantityNum} units of ${medicine.medicine}?`)) {
+        console.log(`Dispensing ${quantityNum} units of ${medicine.medicine}`);
+        
         if (quantityNum === medicine.quantity) {
             inventory.splice(index, 1);
         } else {
             inventory[index].quantity -= quantityNum;
         }
+        
         localStorage.setItem("medicineInventory", JSON.stringify(inventory));
         
-        // Add to dispensed medicines
         const dispensedMedicines = JSON.parse(localStorage.getItem("dispensedMedicines")) || [];
         dispensedMedicines.push({
             medicine: medicine.medicine,
@@ -347,26 +581,35 @@ function dispenseMedicine(index) {
         });
         localStorage.setItem("dispensedMedicines", JSON.stringify(dispensedMedicines));
         
-        // Reload tables
         loadInventory();
         loadDispensedMedicines();
-        
-        alert(`${quantityNum} units of ${medicine.medicine} dispensed successfully!`);
+        updateNotifications();
+        alert(`${quantityNum} units dispensed successfully!`);
+        console.log("Dispensing complete");
     }
 }
 
-// Delete medicine from inventory
+/**
+ * Deletes medicine from inventory
+ */
 function deleteMedicine(index) {
     if (confirm("Are you sure you want to delete this medicine?")) {
+        console.log("Deleting medicine...");
         const inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+        const deletedMedicine = inventory[index];
         inventory.splice(index, 1);
         localStorage.setItem("medicineInventory", JSON.stringify(inventory));
         loadInventory();
+        updateNotifications();
+        console.log(`Deleted medicine: ${deletedMedicine.medicine}`);
     }
 }
 
-// Edit medicine function
+/**
+ * Enables editing of a medicine entry
+ */
 function editMedicine(index) {
+    console.log("Editing medicine...");
     const inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     const med = inventory[index];
     const row = document.querySelector(`#inventoryTableBody tr:nth-child(${index + 1})`);
@@ -378,17 +621,22 @@ function editMedicine(index) {
         <td class="text-center"><input type="number" class="form-control quantity" value="${med.quantity}" min="1" required></td>
         <td><input type="date" class="form-control expiration-date" value="${med.expirationDate}" required></td>
         <td><input type="date" class="form-control delivery-date" value="${med.dateDelivered}" required></td>
-        <td class="text-center actions-cell">
+        <td class="text-center">
             <div class="d-flex justify-content-center gap-2">
                 <button class="btn btn-success btn-sm" onclick="saveUpdatedMedicine(${index})">Save</button>
                 <button class="btn btn-secondary btn-sm" onclick="loadInventory()">Cancel</button>
             </div>
         </td>
     `;
+    
+    console.log(`Editing medicine: ${med.medicine}`);
 }
 
-// Save updated medicine
+/**
+ * Saves updated medicine information
+ */
 function saveUpdatedMedicine(index) {
+    console.log("Saving updated medicine...");
     const row = document.querySelector(`#inventoryTableBody tr:nth-child(${index + 1})`);
     const inputs = {
         medicine: row.querySelector(".medicine-name"),
@@ -399,7 +647,6 @@ function saveUpdatedMedicine(index) {
         dateDelivered: row.querySelector(".delivery-date")
     };
 
-    // Validate inputs
     let isValid = true;
     Object.entries(inputs).forEach(([field, input]) => {
         if (!input.value.trim()) {
@@ -413,9 +660,11 @@ function saveUpdatedMedicine(index) {
         }
     });
 
-    if (!isValid) return;
+    if (!isValid) {
+        console.log("Validation failed for medicine update");
+        return;
+    }
 
-    // Update inventory
     const inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     inventory[index] = {
         medicine: inputs.medicine.value.trim(),
@@ -426,39 +675,47 @@ function saveUpdatedMedicine(index) {
         dateDelivered: inputs.dateDelivered.value
     };
     
-    // Re-sort inventory by expiration date
     inventory.sort((a, b) => new Date(a.expirationDate) - new Date(b.expirationDate));
     
     localStorage.setItem("medicineInventory", JSON.stringify(inventory));
     loadInventory();
+    updateNotifications();
+    
+    console.log(`Medicine updated: ${inputs.medicine.value.trim()}`);
 }
 
-// Export to CSV function
+// ==================== EXPORT FUNCTIONS ====================
+
+/**
+ * Exports inventory to CSV
+ */
 function exportToCSV() {
+    console.log("Exporting inventory to CSV...");
     const inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     if (!inventory.length) return alert("No data to export!");
 
     const headers = ["Medicine", "Brand", "Category", "Quantity", "Expiration Date", "Delivery Date"];
     const csvContent = [
         headers.join(","),
-        ...inventory.map(item => headers.map(header => 
-            `"${item[header.toLowerCase().replace(' ', '')]}"`
-        ).join(","))
+        ...inventory.map(item => [
+            `"${item.medicine}"`,
+            `"${item.brand}"`,
+            `"${item.category}"`,
+            item.quantity,
+            `"${formatDate(item.expirationDate)}"`,
+            `"${formatDate(item.dateDelivered)}"`
+        ].join(","))
     ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `medicine_inventory_${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadCSV(csvContent, `medicine_inventory_${new Date().toISOString().slice(0, 10)}.csv`);
+    console.log("Inventory export complete");
 }
 
-// Export dispensed medicines to CSV
+/**
+ * Exports dispensed medicines to CSV
+ */
 function exportDispensedToCSV() {
+    console.log("Exporting dispensed medicines to CSV...");
     const dispensedMedicines = JSON.parse(localStorage.getItem("dispensedMedicines")) || [];
     if (!dispensedMedicines.length) return alert("No dispensed medicines to export!");
 
@@ -475,22 +732,36 @@ function exportDispensedToCSV() {
         ].join(","))
     ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    downloadCSV(csvContent, `dispensed_medicines_${new Date().toISOString().slice(0, 10)}.csv`);
+    console.log("Dispensed medicines export complete");
+}
+
+/**
+ * Downloads CSV file
+ */
+function downloadCSV(content, filename) {
+    console.log(`Downloading CSV: ${filename}`);
+    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `dispensed_medicines_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
 
-// Check medicine expirations and update notifications
+// ==================== NOTIFICATION FUNCTIONS ====================
+
+/**
+ * Checks for expiring medicines
+ */
 function checkMedicineExpirations() {
+    console.log("Checking medicine expirations...");
     const inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
     const now = new Date();
-    const warningDays = 30; // Show warning 30 days before expiration
+    const warningDays = 30;
     
     let expiredItems = [];
     let nearExpiryItems = [];
@@ -518,73 +789,50 @@ function checkMedicineExpirations() {
         }
     });
 
+    console.log(`Found ${expiredItems.length} expired and ${nearExpiryItems.length} near-expiry items`);
     return { expiredItems, nearExpiryItems };
 }
 
-// Update notification badge and content
+/**
+ * Updates notification badges and content
+ */
 function updateNotifications() {
+    console.log("Updating notifications...");
     const { expiredItems, nearExpiryItems } = checkMedicineExpirations();
     const totalAlerts = expiredItems.length + nearExpiryItems.length;
     const badge = document.getElementById('notificationBadge');
     const content = document.getElementById('notificationContent');
 
-    // Update badge
-    if (totalAlerts > 0) {
-        badge.classList.remove('d-none');
-    } else {
-        badge.classList.add('d-none');
-    }
+    badge.classList.toggle('d-none', totalAlerts === 0);
 
-    // Update dropdown content
     if (totalAlerts === 0) {
         content.innerHTML = '<li class="px-3 py-2 text-muted">No expiration warnings</li>';
     } else {
-        let html = '';
-        
-        // Add expired items first (red warnings)
-        expiredItems.forEach(item => {
-            html += `
+        content.innerHTML = [
+            ...expiredItems.map(item => `
                 <li class="expired-notification">
                     <strong>${item.medicine} (${item.brand})</strong><br>
                     <small>Quantity: ${item.quantity} | Expired ${item.days} day${item.days === 1 ? '' : 's'} ago</small><br>
                     <small>Exp: ${formatDate(item.expirationDate)}</small>
                 </li>
-            `;
-        });
-
-        // Add near-expiry items (orange warnings)
-        nearExpiryItems.forEach(item => {
-            html += `
+            `),
+            ...nearExpiryItems.map(item => `
                 <li class="near-expiry-notification">
                     <strong>${item.medicine} (${item.brand})</strong><br>
                     <small>Quantity: ${item.quantity} | Expires in ${item.days} day${item.days === 1 ? '' : 's'}</small><br>
                     <small>Exp: ${formatDate(item.expirationDate)}</small>
                 </li>
-            `;
-        });
-
-        content.innerHTML = html;
+            `)
+        ].join('');
     }
+    
+    console.log("Notifications updated");
 }
 
-// Call this whenever inventory changes (after save, delete, etc.)
+/**
+ * Refreshes notifications
+ */
 function refreshNotifications() {
+    console.log("Refreshing notifications...");
     updateNotifications();
-}
-// Add to saveStock() function after saving:
-function saveStock() {
-    // ... existing save code ...
-    refreshNotifications();
-}
-
-// Add to deleteMedicine() function:
-function deleteMedicine(index) {
-    // ... existing delete code ...
-    refreshNotifications();
-}
-
-// Add to dispenseMedicine() function:
-function dispenseMedicine(index) {
-    // ... existing dispense code ...
-    refreshNotifications();
 }

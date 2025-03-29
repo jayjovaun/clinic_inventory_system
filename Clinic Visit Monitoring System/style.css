@@ -109,30 +109,30 @@ input[type="date"]:valid:before {
 }
 /* Notification styles */
 #notificationBadge {
-  font-size: 0;
-  width: 10px;
-  height: 10px;
+    font-size: 0;
+    width: 10px;
+    height: 10px;
 }
 
 .expired-notification {
-  color: #dc3545;
-  background-color: #f8d7da;
-  border-left: 3px solid #dc3545;
-  padding: 8px;
-  margin-bottom: 4px;
-  border-radius: 4px;
+    color: #dc3545;
+    background-color: #f8d7da;
+    border-left: 3px solid #dc3545;
+    padding: 8px;
+    margin-bottom: 4px;
+    border-radius: 4px;
 }
 
 .near-expiry-notification {
-  color: #ff9800;
-  background-color: #fff3e0;
-  border-left: 3px solid #ff9800;
-  padding: 8px;
-  margin-bottom: 4px;
-  border-radius: 4px;
+    color: #ff9800;
+    background-color: #fff3e0;
+    border-left: 3px solid #ff9800;
+    padding: 8px;
+    margin-bottom: 4px;
+    border-radius: 4px;
 }
 
 .dropdown-menu {
-  max-height: 400px;
-  overflow-y: auto;
+    max-height: 400px;
+    overflow-y: auto;
 }
