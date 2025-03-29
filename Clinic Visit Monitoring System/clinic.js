@@ -62,7 +62,6 @@ function handleCategoryChange(select) {
     }
 }
 
-// Validate quantity (no negatives or decimals)
 function validateQuantity(input) {
     const value = parseInt(input.value);
     if (isNaN(value) || value < 1) {
@@ -200,10 +199,8 @@ function saveStock() {
     loadInventory();
     loadRecentStocks();
     
-    // Show success message
     alert("Inventory saved successfully!");
 }
-
 // Load inventory with sorting by expiration date
 function loadInventory() {
     let inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
