@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     loadInventory();
     loadRecentStocks();
     loadDispensedMedicines();
+    updateNotifications()
     
     // Initialize search functionality for reports page
     if (document.getElementById('searchMedicine')) {
@@ -271,14 +272,14 @@ function loadDispensedMedicines() {
         `).join("");
     }
 }
-
-// Format date as dd/mm/yyyy
+// Format date to MM/DD/YYYY
 function formatDate(dateString) {
     if (!dateString) return '-';
     const date = new Date(dateString);
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
     const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    return `${month}/${day}/${year}`;
 }
 
 // Search functionality for reports page
@@ -486,4 +487,107 @@ function exportDispensedToCSV() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+}
+
+// Check medicine expirations and update notifications
+function checkMedicineExpirations() {
+    const inventory = JSON.parse(localStorage.getItem("medicineInventory")) || [];
+    const now = new Date();
+    const warningDays = 30; // Show warning 30 days before expiration
+    
+    let expiredItems = [];
+    let nearExpiryItems = [];
+
+    inventory.forEach(med => {
+        const expDate = new Date(med.expirationDate);
+        const daysToExpire = Math.floor((expDate - now) / (1000 * 60 * 60 * 24));
+        
+        if (daysToExpire < 0) {
+            expiredItems.push({
+                medicine: med.medicine,
+                brand: med.brand,
+                quantity: med.quantity,
+                expirationDate: med.expirationDate,
+                days: Math.abs(daysToExpire)
+            });
+        } else if (daysToExpire <= warningDays) {
+            nearExpiryItems.push({
+                medicine: med.medicine,
+                brand: med.brand,
+                quantity: med.quantity,
+                expirationDate: med.expirationDate,
+                days: daysToExpire
+            });
+        }
+    });
+
+    return { expiredItems, nearExpiryItems };
+}
+
+// Update notification badge and content
+function updateNotifications() {
+    const { expiredItems, nearExpiryItems } = checkMedicineExpirations();
+    const totalAlerts = expiredItems.length + nearExpiryItems.length;
+    const badge = document.getElementById('notificationBadge');
+    const content = document.getElementById('notificationContent');
+
+    // Update badge
+    if (totalAlerts > 0) {
+        badge.classList.remove('d-none');
+    } else {
+        badge.classList.add('d-none');
+    }
+
+    // Update dropdown content
+    if (totalAlerts === 0) {
+        content.innerHTML = '<li class="px-3 py-2 text-muted">No expiration warnings</li>';
+    } else {
+        let html = '';
+        
+        // Add expired items first (red warnings)
+        expiredItems.forEach(item => {
+            html += `
+                <li class="expired-notification">
+                    <strong>${item.medicine} (${item.brand})</strong><br>
+                    <small>Quantity: ${item.quantity} | Expired ${item.days} day${item.days === 1 ? '' : 's'} ago</small><br>
+                    <small>Exp: ${formatDate(item.expirationDate)}</small>
+                </li>
+            `;
+        });
+
+        // Add near-expiry items (orange warnings)
+        nearExpiryItems.forEach(item => {
+            html += `
+                <li class="near-expiry-notification">
+                    <strong>${item.medicine} (${item.brand})</strong><br>
+                    <small>Quantity: ${item.quantity} | Expires in ${item.days} day${item.days === 1 ? '' : 's'}</small><br>
+                    <small>Exp: ${formatDate(item.expirationDate)}</small>
+                </li>
+            `;
+        });
+
+        content.innerHTML = html;
+    }
+}
+
+// Call this whenever inventory changes (after save, delete, etc.)
+function refreshNotifications() {
+    updateNotifications();
+}
+// Add to saveStock() function after saving:
+function saveStock() {
+    // ... existing save code ...
+    refreshNotifications();
+}
+
+// Add to deleteMedicine() function:
+function deleteMedicine(index) {
+    // ... existing delete code ...
+    refreshNotifications();
+}
+
+// Add to dispenseMedicine() function:
+function dispenseMedicine(index) {
+    // ... existing dispense code ...
+    refreshNotifications();
 }
