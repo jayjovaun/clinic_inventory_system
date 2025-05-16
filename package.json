@@ -1,0 +1,58 @@
+{
+  "name": "clinicz-desktop",
+  "version": "1.0.0",
+  "main": "main.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "build": "node build.js",
+    "build:win": "node build.js --win",
+    "build:mac": "node build.js --mac",
+    "build:linux": "node build.js --linux",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jayjovaun/clinic_inventory_system.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jayjovaun/clinic_inventory_system/issues"
+  },
+  "homepage": "https://github.com/jayjovaun/clinic_inventory_system#readme",
+  "description": "Clinic Management System Desktop Application",
+  "build": {
+    "appId": "com.clinicz.app",
+    "productName": "Clinicz",
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "build/icon.png"
+    }
+  },
+  "devDependencies": {
+    "electron": "^36.2.0",
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.2"
+  },
+  "dependencies": {
+    "electron-is-dev": "^3.0.1",
+    "find-process": "^1.4.10",
+    "node-windows": "^1.0.0-beta.8",
+    "ps-node": "^0.1.6"
+  }
+}
