@@ -1,6 +1,6 @@
 # Clinicz Desktop App
 
-A desktop application for the Clinicz management system, built with Electron and PHP.
+A desktop application for the Clinic Inventory Management System, built with Electron and PHP.
 
 ## Prerequisites
 
